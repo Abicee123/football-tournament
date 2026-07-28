@@ -7,9 +7,6 @@ import {
 
 // ==========================================
 // 🔴 BACKEND DATABASE CONFIGURATION 🔴
-// 1. Go to firebase.google.com and create a project
-// 2. Set up Firestore Database (in Test Mode)
-// 3. Register a Web App and paste your keys below!
 // ==========================================
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, onSnapshot, setDoc } from 'firebase/firestore';
@@ -29,7 +26,6 @@ let db = null;
 let appDataRef = null;
 let isFirebaseConnected = false;
 
-// Attempt to initialize Firebase if the user has added their keys
 if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
   try {
     const app = initializeApp(firebaseConfig);
@@ -40,7 +36,6 @@ if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
     console.error("Firebase init error", error);
   }
 }
-// ==========================================
 
 const initialTeams = [
   { id: 't1', name: 'Sunnathth Sulthans', color: '#3B82F6' },
@@ -638,7 +633,6 @@ export default function App() {
   const [adminMvpPlayer, setAdminMvpPlayer] = useState('');
 
   useEffect(() => {
-    // If Firebase is configured, use real-time listeners
     if (isFirebaseConnected && appDataRef) {
       const unsubscribe = onSnapshot(appDataRef, (docSnap) => {
         if (docSnap.exists()) {
@@ -647,13 +641,11 @@ export default function App() {
           if (data.matches) setMatches(data.matches);
           if (data.players) setPlayers(data.players);
         } else {
-          // Initialize empty database
           setDoc(appDataRef, { teams: initialTeams, matches: initialMatches, players: [] });
         }
       });
       return () => unsubscribe();
     } 
-    // Fallback to LocalStorage if Firebase is missing
     else {
       try {
         const storedTeams = localStorage.getItem('khajTeamsV4');
@@ -680,7 +672,6 @@ export default function App() {
   }, []);
 
   const syncToDB = (t, m, p) => {
-    // Optimistic local update for instant UI response
     if (t) setTeams(t);
     if (m) setMatches(m);
     if (p) setPlayers(p);
@@ -827,6 +818,7 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1 flex flex-col">
         
+        {}
         {isTournamentOver ? (
            <div className="w-full bg-gradient-to-br from-amber-500/20 to-amber-900/40 border border-amber-500/30 rounded-[2rem] p-10 md:p-16 mb-12 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-[0_0_80px_rgba(245,158,11,0.15)]">
               <Trophy size={64} className="text-amber-500 mb-6 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]" />
@@ -835,47 +827,51 @@ export default function App() {
               <p className="text-sm font-semibold text-zinc-400 uppercase tracking-widest mt-4">Runners Up: <span className="text-zinc-200">{getTeam(tournamentRunnerUp).name}</span></p>
            </div>
         ) : heroMatch ? (
-           <div className="w-full bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] relative overflow-hidden">
-              <div className="flex flex-col items-start z-10 mb-8 md:mb-0">
-                 <div className={`text-[10px] font-bold uppercase tracking-[0.3em] px-4 py-2 rounded-full mb-6 border ${isLive ? 'bg-rose-500/10 text-rose-500 border-rose-500/20 animate-pulse' : 'bg-white/5 text-zinc-400 border-white/10'}`}>
+           <div className="w-full bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 sm:p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] relative overflow-hidden">
+              
+              {/* Responsive Date/Time Block */}
+              <div className="flex flex-col items-center md:items-start z-10 mb-8 md:mb-0 w-full md:w-auto">
+                 <div className={`text-[10px] font-bold uppercase tracking-[0.3em] px-4 py-2 rounded-full mb-4 md:mb-6 border ${isLive ? 'bg-rose-500/10 text-rose-500 border-rose-500/20 animate-pulse' : 'bg-white/5 text-zinc-400 border-white/10'}`}>
                     {isLive ? 'LIVE NOW' : 'NEXT MATCH'}
                  </div>
                  {isLive && (
-                    <div className="text-4xl md:text-5xl font-outfit font-black text-white flex items-center gap-4 mb-2 tabular-nums tracking-tighter">
+                    <div className="text-4xl md:text-5xl font-outfit font-black text-white flex items-center justify-center md:justify-start gap-4 mb-2 tabular-nums tracking-tighter w-full">
                        <LiveTimerDisplay timer={heroMatch.timer} showAlarm={false} />
                        {heroMatch.timer.stoppage > 0 && <span className="text-rose-500 text-2xl">+{heroMatch.timer.stoppage}'</span>}
                        <span className="text-sm font-semibold text-zinc-500 uppercase tracking-widest ml-2 bg-white/5 px-3 py-1 rounded-lg">{heroMatch.timer.period}</span>
                     </div>
                  )}
                  {!isLive && (
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-4 mt-2">
-                       <div className="flex items-center gap-3 text-white font-outfit text-2xl md:text-3xl font-black">
-                          <Calendar size={28} className="text-zinc-500"/>
+                    <div className="flex flex-col items-center md:flex-row md:items-center gap-1 md:gap-4 mt-2">
+                       <div className="flex items-center justify-center gap-3 text-white font-outfit text-2xl md:text-3xl font-black">
+                          <Calendar size={24} className="text-zinc-500 md:w-7 md:h-7"/>
                           {new Date(heroMatch.time).toLocaleDateString([], {month:'long', day:'numeric'})}
                        </div>
-                       <div className="text-zinc-400 font-outfit text-xl md:text-3xl font-black lg:border-l lg:border-white/20 lg:pl-4">
+                       <div className="text-zinc-400 font-outfit text-xl md:text-3xl font-black md:border-l md:border-white/20 md:pl-4">
                           {new Date(heroMatch.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
                        </div>
                     </div>
                  )}
               </div>
 
-              <div className="flex items-center gap-6 md:gap-12 z-10 w-full md:w-auto justify-center mt-4 md:mt-0">
-                 <div className="flex flex-col items-center">
-                    <div className="w-4 h-4 rounded-full mb-4 shadow-[0_0_15px_rgba(255,255,255,0.4)]" style={{backgroundColor: getTeam(heroMatch.team1).color, boxShadow: `0 0 20px ${getTeam(heroMatch.team1).color}`}} />
-                    <span className="font-outfit font-black text-2xl md:text-4xl text-white uppercase tracking-tight text-center max-w-[140px] md:max-w-[200px] leading-none">{getTeam(heroMatch.team1).name}</span>
-                    {isLive && <motion.span key={heroMatch.score1} initial={{scale:1.5, color:getTeam(heroMatch.team1).color}} animate={{scale:1, color:"#ffffff"}} className="text-6xl md:text-7xl font-black font-outfit tabular-nums mt-4 tracking-tighter">{heroMatch.score1}</motion.span>}
+              {/* Responsive Team Names Block */}
+              <div className="flex items-center justify-between md:justify-center gap-2 sm:gap-6 md:gap-12 z-10 w-full md:w-auto mt-2 md:mt-0 px-2 md:px-0">
+                 <div className="flex flex-col items-center flex-1 md:flex-none">
+                    <div className="w-3 h-3 md:w-4 md:h-4 rounded-full mb-3 md:mb-4 shadow-[0_0_15px_rgba(255,255,255,0.4)]" style={{backgroundColor: getTeam(heroMatch.team1).color, boxShadow: `0 0 20px ${getTeam(heroMatch.team1).color}`}} />
+                    <span className="font-outfit font-black text-base sm:text-xl md:text-4xl text-white uppercase tracking-tight text-center leading-tight break-words max-w-[120px] md:max-w-[200px]">{getTeam(heroMatch.team1).name}</span>
+                    {isLive && <motion.span key={heroMatch.score1} initial={{scale:1.5, color:getTeam(heroMatch.team1).color}} animate={{scale:1, color:"#ffffff"}} className="text-5xl md:text-7xl font-black font-outfit tabular-nums mt-3 md:mt-4 tracking-tighter">{heroMatch.score1}</motion.span>}
                  </div>
-                 <span className="text-3xl md:text-5xl font-black text-zinc-700 italic">VS</span>
-                 <div className="flex flex-col items-center">
-                    <div className="w-4 h-4 rounded-full mb-4 shadow-[0_0_15px_rgba(255,255,255,0.4)]" style={{backgroundColor: getTeam(heroMatch.team2).color, boxShadow: `0 0 20px ${getTeam(heroMatch.team2).color}`}} />
-                    <span className="font-outfit font-black text-2xl md:text-4xl text-white uppercase tracking-tight text-center max-w-[140px] md:max-w-[200px] leading-none">{getTeam(heroMatch.team2).name}</span>
-                    {isLive && <motion.span key={heroMatch.score2} initial={{scale:1.5, color:getTeam(heroMatch.team2).color}} animate={{scale:1, color:"#ffffff"}} className="text-6xl md:text-7xl font-black font-outfit tabular-nums mt-4 tracking-tighter">{heroMatch.score2}</motion.span>}
+                 <span className="text-xl sm:text-3xl md:text-5xl font-black text-zinc-700 italic px-1 md:px-0">VS</span>
+                 <div className="flex flex-col items-center flex-1 md:flex-none">
+                    <div className="w-3 h-3 md:w-4 md:h-4 rounded-full mb-3 md:mb-4 shadow-[0_0_15px_rgba(255,255,255,0.4)]" style={{backgroundColor: getTeam(heroMatch.team2).color, boxShadow: `0 0 20px ${getTeam(heroMatch.team2).color}`}} />
+                    <span className="font-outfit font-black text-base sm:text-xl md:text-4xl text-white uppercase tracking-tight text-center leading-tight break-words max-w-[120px] md:max-w-[200px]">{getTeam(heroMatch.team2).name}</span>
+                    {isLive && <motion.span key={heroMatch.score2} initial={{scale:1.5, color:getTeam(heroMatch.team2).color}} animate={{scale:1, color:"#ffffff"}} className="text-5xl md:text-7xl font-black font-outfit tabular-nums mt-3 md:mt-4 tracking-tighter">{heroMatch.score2}</motion.span>}
                  </div>
               </div>
            </div>
         ) : null}
 
+        {}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 flex-1">
            <div className="xl:col-span-2 flex flex-col h-full">
               <div className="flex overflow-x-auto gap-2 mb-8 bg-white/[0.02] p-2 rounded-2xl border border-white/10 backdrop-blur-md">
@@ -903,6 +899,7 @@ export default function App() {
                  <AnimatePresence mode="wait">
                    <motion.div key={activeTab} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} transition={{duration:0.2}} className="h-full">
                      
+                     {}
                      {activeTab === 'fixtures' && (
                        <div className="space-y-12 pb-10">
                          {['group', 'semi', 'final'].map(stage => {
@@ -926,15 +923,16 @@ export default function App() {
                                    return (
                                      <div 
                                        key={m.id} 
-                                       onClick={() => isAdmin && isInteractive && setEditingMatchId(m.id)}
+                                       // Fixed click handler to allow public viewing
+                                       onClick={() => isInteractive && setEditingMatchId(m.id)}
                                        className={`bg-white/[0.02] backdrop-blur-xl rounded-3xl border border-white/5 p-6 transition-all group relative overflow-hidden shadow-[0_4px_24px_0_rgba(0,0,0,0.2)]
-                                         ${isAdmin && isInteractive ? 'cursor-pointer hover:bg-white/[0.05] hover:border-white/20' : ''}
+                                         ${isInteractive ? 'cursor-pointer hover:bg-white/[0.05] hover:border-white/20' : ''}
                                          ${isMatchLive ? 'md:col-span-2 bg-white/[0.05] border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]' : ''}`}
                                      >
                                        <div className="flex justify-between items-center mb-6">
                                          <span className={`text-[9px] font-bold uppercase tracking-[0.2em] px-3 py-1.5 rounded-full border 
-                                           ${m.status === 'live' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20 animate-pulse' : 
-                                             m.status === 'completed' ? 'bg-white/5 text-zinc-500 border-white/10' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+                                            ${m.status === 'live' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20 animate-pulse' : 
+                                              m.status === 'completed' ? 'bg-white/5 text-zinc-500 border-white/10' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
                                            {m.status}
                                          </span>
                                          
@@ -991,6 +989,7 @@ export default function App() {
                        </div>
                      )}
 
+                     {}
                      {activeTab === 'teams' && (
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                          {teams.map(team => (
@@ -1092,6 +1091,7 @@ export default function App() {
                        </div>
                      )}
 
+                     {}
                      {activeTab === 'stats' && (
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                          {[
@@ -1200,6 +1200,7 @@ export default function App() {
                        </div>
                      )}
                      
+                     {}
                      {activeTab === 'standings_mobile' && (
                         <div className="xl:hidden pb-10">
                            <StandingsWidget standings={standings} />
@@ -1211,6 +1212,7 @@ export default function App() {
               </div>
            </div>
 
+           {}
            <div className="hidden xl:block xl:col-span-1 h-full">
               <div className="sticky top-28 h-[calc(100vh-140px)]">
                  <StandingsWidget standings={standings} />
@@ -1219,6 +1221,21 @@ export default function App() {
 
         </div>
       </main>
+
+      {}
+      {/* ADDED THIS BLOCK: Properly renders the Match Dashboard when a match card is clicked */}
+      {editingMatchId && (
+        <MatchDashboard 
+          matchId={editingMatchId} 
+          onClose={() => setEditingMatchId(null)} 
+          matches={matches} 
+          teams={teams} 
+          players={players} 
+          isAdmin={isAdmin} 
+          syncToDB={syncToDB} 
+          getTeam={getTeam} 
+        />
+      )}
     </div>
   );
 }
