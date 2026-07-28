@@ -1020,7 +1020,7 @@ export default function App() {
            <div className="xl:col-span-2 flex flex-col h-full">
               
               {/* Complex Navigation Tabs */}
-              <div className="flex overflow-x-auto gap-2 md:gap-4 mb-8 bg-zinc-950/80 p-3 md:p-4 rounded-3xl md:rounded-[2rem] border border-white/10 backdrop-blur-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5)] w-full max-w-fit mx-auto xl:mx-0 relative z-20">
+              <div className="flex overflow-x-auto gap-2 md:gap-4 mb-8 bg-zinc-950/80 p-2 sm:p-3 md:p-4 rounded-3xl md:rounded-[2rem] border border-white/10 backdrop-blur-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5)] w-full max-w-full xl:max-w-fit mx-auto xl:mx-0 relative z-20 snap-x">
                 {[
                   { id: 'fixtures', label: 'Matches', icon: Calendar },
                   { id: 'teams', label: 'Squads', icon: Users },
@@ -1032,11 +1032,11 @@ export default function App() {
                   
                   if (tab.hiddenDesktop) {
                      return (
-                        <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`xl:hidden relative flex items-center gap-2 md:gap-3 px-6 py-3.5 md:py-4 rounded-2xl md:rounded-[1.5rem] text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap overflow-hidden group skew-x-[-10deg] ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}>
+                        <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`xl:hidden relative flex items-center gap-1.5 sm:gap-2 md:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap group skew-x-[-10deg] shrink-0 snap-center ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}>
                            {isActive && (
-                              <motion.div layoutId="activeTabMobile" className="absolute inset-0 bg-white/10 border border-white/20 rounded-2xl md:rounded-[1.5rem] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+                              <motion.div layoutId="activeTabMobile" className="absolute inset-0 bg-white/10 border border-white/20 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
                            )}
-                           <div className={`relative z-10 flex items-center gap-2 transition-transform duration-300 skew-x-[10deg] ${isActive ? 'scale-105' : 'group-hover:scale-105'}`}>
+                           <div className={`relative z-10 flex items-center gap-1.5 sm:gap-2 transition-transform duration-300 skew-x-[10deg] ${isActive ? 'scale-105' : 'group-hover:scale-105'}`}>
                               <Icon size={16} className={isActive ? 'text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'text-zinc-600'} /> 
                               {tab.label.replace(' (Mobile)', '')}
                            </div>
@@ -1045,11 +1045,11 @@ export default function App() {
                   }
 
                   return (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id.replace('_mobile',''))} className={`relative flex items-center gap-2 md:gap-3 px-6 py-3.5 md:py-4 rounded-2xl md:rounded-[1.5rem] text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap overflow-hidden group skew-x-[-10deg] ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}>
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id.replace('_mobile',''))} className={`relative flex items-center gap-1.5 sm:gap-2 md:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap group skew-x-[-10deg] shrink-0 snap-center ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}>
                       {isActive && (
-                         <motion.div layoutId="activeTab" className="absolute inset-0 bg-white/10 border border-white/20 rounded-2xl md:rounded-[1.5rem] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+                         <motion.div layoutId="activeTab" className="absolute inset-0 bg-white/10 border border-white/20 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
                       )}
-                      <div className={`relative z-10 flex items-center gap-2 transition-transform duration-300 skew-x-[10deg] ${isActive ? 'scale-105' : 'group-hover:scale-105'}`}>
+                      <div className={`relative z-10 flex items-center gap-1.5 sm:gap-2 transition-transform duration-300 skew-x-[10deg] ${isActive ? 'scale-105' : 'group-hover:scale-105'}`}>
                          <Icon size={18} className={isActive ? 'text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'text-zinc-600'} /> 
                          {tab.label}
                       </div>
@@ -1082,13 +1082,21 @@ export default function App() {
                                    const isInteractive = (m.team1 && m.team2);
                                    const isMatchLive = m.status === 'live';
                                    
+                                   const mt1Color = mt1?.color || '#333333';
+                                   const mt2Color = mt2?.color || '#333333';
+                                   
                                    return (
                                      <div 
                                        key={m.id} 
                                        onClick={() => isInteractive && setEditingMatchId(m.id)}
-                                       className={`bg-zinc-950/80 backdrop-blur-xl rounded-3xl border border-white/5 p-6 md:p-8 transition-all group relative overflow-hidden shadow-lg
-                                         ${isInteractive ? 'cursor-pointer hover:bg-white/[0.05] hover:border-white/20 hover:-translate-y-1' : ''}
-                                         ${isMatchLive ? 'md:col-span-2 bg-gradient-to-br from-white/[0.05] to-transparent border-white/20 shadow-[0_15px_40px_rgba(0,0,0,0.6)]' : ''}`}
+                                       className={`backdrop-blur-xl rounded-3xl border border-white/5 p-6 md:p-8 transition-all group relative overflow-hidden shadow-lg
+                                         ${isInteractive ? 'cursor-pointer hover:border-white/20 hover:-translate-y-1' : ''}
+                                         ${isMatchLive ? 'md:col-span-2 border-white/20 shadow-[0_15px_40px_rgba(0,0,0,0.6)]' : ''}`}
+                                       style={{
+                                          background: isMatchLive 
+                                            ? `linear-gradient(135deg, ${mt1Color}33 0%, rgba(9, 9, 11, 0.95) 40%, rgba(9, 9, 11, 0.95) 60%, ${mt2Color}33 100%)`
+                                            : `linear-gradient(135deg, ${mt1Color}15 0%, rgba(9, 9, 11, 0.8) 50%, ${mt2Color}15 100%)`
+                                       }}
                                      >
                                        <div className="flex justify-between items-center mb-6 relative z-10">
                                          <span className={`text-[9px] font-black uppercase tracking-[0.3em] px-3 py-1.5 rounded-sm border skew-x-[-10deg] 
