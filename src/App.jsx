@@ -92,15 +92,24 @@ const LiveTimerDisplay = ({ timer, match }) => {
 };
 
 const StandingsWidget = ({ standings }) => (
-  <div className="bg-zinc-950/80 backdrop-blur-2xl rounded-3xl border border-white/10 overflow-hidden flex flex-col h-full shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
-    <div className="p-6 border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent flex items-center gap-3">
-      <Trophy className="text-amber-500 drop-shadow-md" size={20} />
-      <h3 className="font-outfit font-black text-white tracking-widest uppercase text-lg">Points Table</h3>
+  <div className="bg-zinc-950/80 backdrop-blur-2xl rounded-3xl border border-white/10 overflow-hidden flex flex-col h-full shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative">
+    {/* Premium Top Glow Overlay */}
+    <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none" />
+    
+    <div className="p-6 border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent flex items-center gap-4 relative z-10">
+      <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.2)] skew-x-[-10deg]">
+         <Trophy className="text-amber-500 drop-shadow-md skew-x-[10deg]" size={22} />
+      </div>
+      <div className="flex flex-col">
+         <h3 className="font-outfit font-black text-white tracking-widest uppercase text-xl leading-none">Points Table</h3>
+         <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-[0.2em] mt-1">Group Stage Rankings</span>
+      </div>
     </div>
-    <div className="overflow-x-auto flex-1">
-      <table className="w-full text-left border-collapse">
+    
+    <div className="overflow-x-auto flex-1 relative z-10">
+      <table className="w-full text-left border-collapse min-w-[500px]">
         <thead>
-          <tr className="bg-white/5 border-b border-white/10">
+          <tr className="bg-white/[0.03] border-b border-white/10">
             <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Pos</th>
             <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Club</th>
             <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 text-center">P</th>
@@ -115,12 +124,15 @@ const StandingsWidget = ({ standings }) => (
         </thead>
         <tbody className="divide-y divide-white/5">
           {standings.map((t, idx) => (
-            <tr key={t.id} className="hover:bg-white/[0.04] transition-colors group">
-              <td className="p-4 font-outfit font-bold text-zinc-500">{idx + 1}</td>
-              <td className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.3)] group-hover:scale-125 transition-transform" style={{backgroundColor: t.color, boxShadow: `0 0 10px ${t.color}`}} />
-                  <span className="font-bold text-zinc-200 group-hover:text-white transition-colors truncate max-w-[120px] sm:max-w-none block text-sm uppercase tracking-wider">{t.name}</span>
+            <tr key={t.id} className={`hover:bg-white/[0.06] transition-all duration-300 group relative ${idx < 2 ? 'bg-emerald-500/[0.03]' : ''}`}>
+              {/* Highlight Qualification Zone (Top 2) */}
+              {idx < 2 && <td className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)]" />}
+              
+              <td className="p-4 font-outfit font-black text-zinc-500 text-lg w-12 text-center pl-6">{idx + 1}</td>
+              <td className="p-4 py-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-3 h-3 rounded-full shadow-[0_0_12px_rgba(255,255,255,0.4)] group-hover:scale-125 transition-transform" style={{backgroundColor: t.color, boxShadow: `0 0 15px ${t.color}`}} />
+                  <span className="font-outfit font-bold text-zinc-200 group-hover:text-white transition-colors block text-sm sm:text-base uppercase tracking-wider">{t.name}</span>
                 </div>
               </td>
               <td className="p-4 text-center font-semibold text-zinc-400 tabular-nums">{t.p}</td>
@@ -129,8 +141,8 @@ const StandingsWidget = ({ standings }) => (
               <td className="p-4 text-center font-semibold text-zinc-400 tabular-nums">{t.l}</td>
               <td className="p-4 text-center font-semibold text-zinc-600 tabular-nums hidden sm:table-cell">{t.gf}</td>
               <td className="p-4 text-center font-semibold text-zinc-600 tabular-nums hidden sm:table-cell">{t.ga}</td>
-              <td className="p-4 text-center font-semibold text-zinc-400 tabular-nums">{t.gd > 0 ? `+${t.gd}` : t.gd}</td>
-              <td className="p-4 text-center font-black text-white text-lg tabular-nums">{t.pts}</td>
+              <td className="p-4 text-center font-bold text-zinc-300 tabular-nums">{t.gd > 0 ? `+${t.gd}` : t.gd}</td>
+              <td className="p-4 text-center font-black font-outfit text-white text-2xl tabular-nums drop-shadow-md">{t.pts}</td>
             </tr>
           ))}
         </tbody>
@@ -1025,10 +1037,10 @@ export default function App() {
                   { id: 'fixtures', label: 'Matches', icon: Calendar },
                   { id: 'teams', label: 'Squads', icon: Users },
                   { id: 'stats', label: 'Stats', icon: Activity },
-                  { id: 'standings_mobile', label: 'Table', icon: Trophy, hiddenDesktop: true }
+                  { id: 'standings', label: 'Table', icon: Trophy, hiddenDesktop: true }
                 ].map(tab => {
                   const Icon = tab.icon;
-                  const isActive = activeTab === tab.id.replace('_mobile', '');
+                  const isActive = activeTab === tab.id;
                   
                   if (tab.hiddenDesktop) {
                      return (
@@ -1045,7 +1057,7 @@ export default function App() {
                   }
 
                   return (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id.replace('_mobile',''))} className={`relative flex items-center gap-1.5 sm:gap-2 md:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap group skew-x-[-10deg] shrink-0 snap-center ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}>
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative flex items-center gap-1.5 sm:gap-2 md:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap group skew-x-[-10deg] shrink-0 snap-center ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}>
                       {isActive && (
                          <motion.div layoutId="activeTab" className="absolute inset-0 bg-white/10 border border-white/20 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
                       )}
@@ -1379,7 +1391,7 @@ export default function App() {
                        </div>
                      )}
                      
-                     {activeTab === 'standings_mobile' && (
+                     {activeTab === 'standings' && (
                         <div className="xl:hidden pb-10">
                            <StandingsWidget standings={standings} />
                         </div>
