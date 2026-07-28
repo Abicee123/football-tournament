@@ -280,7 +280,7 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-3xl z-50 overflow-y-auto">
-      <div className="min-h-screen p-2 md:p-6 flex justify-center relative">
+      <div className="min-h-screen p-0 sm:p-6 flex justify-center relative">
         
         {dialogState && (
            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
@@ -357,76 +357,81 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
            </div>
         )}
 
-        <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-6xl rounded-[2rem] shadow-[0_0_60px_rgba(0,0,0,0.8)] flex flex-col relative my-auto overflow-hidden">
+        <div className="bg-[#0a0a0a] sm:border border-white/10 w-full max-w-6xl sm:rounded-[2rem] shadow-[0_0_60px_rgba(0,0,0,0.8)] flex flex-col relative my-auto overflow-hidden min-h-screen sm:min-h-0">
           
-          <div className="sticky top-0 z-30 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/5 p-4 md:p-6 flex justify-between items-center">
-            <div className="flex items-center gap-4">
+          <div className="sticky top-0 z-30 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-white/5 p-3 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-xl">
+            <div className="flex items-center justify-between w-full sm:w-auto gap-2">
                {isAdmin && match.status !== 'completed' && (
-                  <button onClick={handleProgression} className="bg-white text-black px-6 py-2.5 rounded-full font-bold text-sm hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-                     {getProgressionBtnText()} <ChevronRight size={16}/>
+                  <button onClick={handleProgression} className="bg-white text-black px-4 py-2 sm:px-6 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm hover:bg-zinc-200 transition-colors flex items-center gap-1 sm:gap-2 shadow-[0_0_15px_rgba(255,255,255,0.3)] whitespace-nowrap">
+                     {getProgressionBtnText()} <ChevronRight size={14}/>
                   </button>
                )}
                {(!isAdmin || match.status === 'completed') && (
-                  <span className="text-white font-bold text-lg">{t1.name} vs {t2.name}</span>
+                  <span className="text-white font-bold text-sm sm:text-lg truncate max-w-[200px]">{t1.name} vs {t2.name}</span>
                )}
+               <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white flex items-center justify-center transition-colors sm:hidden shrink-0">
+                  <X size={18} />
+               </button>
             </div>
             
-            <div className="flex items-center gap-4">
-               <div className="flex items-center bg-zinc-900 rounded-full px-4 py-1.5 border border-white/10">
-                  <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest mr-3">{match.timer.period}</span>
-                  <div className="text-xl font-bold font-outfit text-white tabular-nums flex items-center gap-1">
-                     <LiveTimerDisplay timer={match.timer} showAlarm={true} />
-                     {match.timer.stoppage > 0 && <span className="text-rose-500 text-sm">+{match.timer.stoppage}</span>}
+            <div className="flex items-center w-full sm:w-auto">
+               <div className="flex flex-1 items-center justify-between bg-zinc-900 rounded-full px-3 py-1.5 border border-white/10">
+                  <div className="flex items-center gap-2">
+                     <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{match.timer.period}</span>
+                     <div className="text-lg sm:text-xl font-bold font-outfit text-white tabular-nums flex items-center gap-1">
+                        <LiveTimerDisplay timer={match.timer} showAlarm={true} />
+                        {match.timer.stoppage > 0 && <span className="text-rose-500 text-[10px] sm:text-sm w-4">+{match.timer.stoppage}</span>}
+                     </div>
                   </div>
                   {isAdmin && match.status !== 'completed' && (
-                     <div className="flex items-center ml-4 border-l border-white/10 pl-4 gap-2">
-                        <button onClick={toggleTimer} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${match.timer.isRunning ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30' : 'bg-white/10 text-white hover:bg-white/20'}`}>
-                           {match.timer.isRunning ? <Pause size={12} fill="currentColor"/> : <Play size={12} fill="currentColor" className="ml-0.5"/>}
+                     <div className="flex items-center ml-2 sm:ml-4 border-l border-white/10 pl-2 sm:pl-4 gap-1.5 sm:gap-2">
+                        <button onClick={toggleTimer} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${match.timer.isRunning ? 'bg-amber-500/20 text-amber-500' : 'bg-white/10 text-white'}`}>
+                           {match.timer.isRunning ? <Pause size={14} fill="currentColor"/> : <Play size={14} fill="currentColor" className="ml-0.5"/>}
                         </button>
-                        <button onClick={triggerResetTimer} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors">
-                           <RotateCcw size={12} />
+                        <button onClick={triggerResetTimer} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-zinc-400 hover:text-white transition-colors">
+                           <RotateCcw size={14} />
                         </button>
-                        <button onClick={() => updateLiveMatch(m => { m.timer.stoppage += 1; return m; })} className="w-8 h-8 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 font-bold text-xs transition-colors">
+                        <button onClick={() => updateLiveMatch(m => { m.timer.stoppage += 1; return m; })} className="w-8 h-8 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 border border-rose-500/20 font-bold text-[10px] transition-colors">
                            +1
                         </button>
                      </div>
                   )}
                </div>
                
-               <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white flex items-center justify-center transition-colors">
+               <button onClick={onClose} className="hidden sm:flex w-10 h-10 rounded-full bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white items-center justify-center transition-colors ml-4 shrink-0">
                   <X size={20} />
                </button>
             </div>
           </div>
 
-          <div className="p-6 md:p-10 flex-1 overflow-y-auto">
-            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 mb-12">
-               <div className="flex-1 text-center bg-white/[0.02] p-8 rounded-[2rem] border border-white/5 w-full relative">
-                  <div className="w-16 h-2 mx-auto rounded-full mb-6 shadow-[0_0_15px_rgba(255,255,255,0.2)]" style={{backgroundColor: t1.color}} />
-                  <h3 className="font-outfit font-black text-white mb-6 text-3xl uppercase tracking-tight">{t1.name}</h3>
-                  <div className="flex items-center justify-center gap-6">
-                     {isAdmin && <button onClick={()=>updateLiveMatch(m=>{ m.score1 = Math.max(0, m.score1-1); m.stats.t1Sot = Math.max(0, m.stats.t1Sot-1); return m;})} className="w-12 h-12 rounded-full bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white flex items-center justify-center transition-colors"><Minus size={20}/></button>}
-                     <span className="text-8xl font-black font-outfit text-white tabular-nums w-24 leading-none">{match.score1}</span>
-                     {isAdmin && <button onClick={()=>updateLiveMatch(m=>{ m.score1 += 1; m.stats.t1Sot += 1; return m;})} className="w-12 h-12 rounded-full bg-white text-black hover:bg-zinc-200 flex items-center justify-center transition-colors"><Plus size={20}/></button>}
+          <div className="p-4 sm:p-6 md:p-10 flex-1 overflow-y-auto">
+            <div className="flex flex-row items-center justify-center gap-2 sm:gap-8 md:gap-16 mb-8 md:mb-12">
+               <div className="flex-1 text-center bg-white/[0.02] p-3 sm:p-8 rounded-2xl sm:rounded-[2rem] border border-white/5 w-full relative">
+                  <div className="w-10 sm:w-16 h-1 sm:h-2 mx-auto rounded-full mb-3 sm:mb-6 shadow-[0_0_15px_rgba(255,255,255,0.2)]" style={{backgroundColor: t1.color}} />
+                  <h3 className="font-outfit font-black text-white mb-3 sm:mb-6 text-[11px] sm:text-3xl uppercase tracking-tight line-clamp-2 min-h-[2rem] sm:min-h-0 flex items-center justify-center">{t1.name}</h3>
+                  <div className="flex items-center justify-center gap-2 sm:gap-6">
+                     {isAdmin && <button onClick={()=>updateLiveMatch(m=>{ m.score1 = Math.max(0, m.score1-1); m.stats.t1Sot = Math.max(0, m.stats.t1Sot-1); return m;})} className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white flex items-center justify-center transition-colors shrink-0"><Minus size={14}/></button>}
+                     <span className="text-4xl sm:text-8xl font-black font-outfit text-white tabular-nums w-10 sm:w-24 leading-none shrink-0">{match.score1}</span>
+                     {isAdmin && <button onClick={()=>updateLiveMatch(m=>{ m.score1 += 1; m.stats.t1Sot += 1; return m;})} className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-white text-black hover:bg-zinc-200 flex items-center justify-center transition-colors shrink-0"><Plus size={14}/></button>}
                   </div>
                </div>
                
-               <div className="text-zinc-600 font-black font-outfit text-2xl uppercase tracking-[0.2em]">VS</div>
+               <div className="text-zinc-600 font-black font-outfit text-xs sm:text-2xl uppercase tracking-[0.2em] shrink-0">VS</div>
                
-               <div className="flex-1 text-center bg-white/[0.02] p-8 rounded-[2rem] border border-white/5 w-full relative">
-                  <div className="w-16 h-2 mx-auto rounded-full mb-6 shadow-[0_0_15px_rgba(255,255,255,0.2)]" style={{backgroundColor: t2.color}} />
-                  <h3 className="font-outfit font-black text-white mb-6 text-3xl uppercase tracking-tight">{t2.name}</h3>
-                  <div className="flex items-center justify-center gap-6">
-                     {isAdmin && <button onClick={()=>updateLiveMatch(m=>{ m.score2 = Math.max(0, m.score2-1); m.stats.t2Sot = Math.max(0, m.stats.t2Sot-1); return m;})} className="w-12 h-12 rounded-full bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white flex items-center justify-center transition-colors"><Minus size={20}/></button>}
-                     <span className="text-8xl font-black font-outfit text-white tabular-nums w-24 leading-none">{match.score2}</span>
-                     {isAdmin && <button onClick={()=>updateLiveMatch(m=>{ m.score2 += 1; m.stats.t2Sot += 1; return m;})} className="w-12 h-12 rounded-full bg-white text-black hover:bg-zinc-200 flex items-center justify-center transition-colors"><Plus size={20}/></button>}
+               <div className="flex-1 text-center bg-white/[0.02] p-3 sm:p-8 rounded-2xl sm:rounded-[2rem] border border-white/5 w-full relative">
+                  <div className="w-10 sm:w-16 h-1 sm:h-2 mx-auto rounded-full mb-3 sm:mb-6 shadow-[0_0_15px_rgba(255,255,255,0.2)]" style={{backgroundColor: t2.color}} />
+                  <h3 className="font-outfit font-black text-white mb-3 sm:mb-6 text-[11px] sm:text-3xl uppercase tracking-tight line-clamp-2 min-h-[2rem] sm:min-h-0 flex items-center justify-center">{t2.name}</h3>
+                  <div className="flex items-center justify-center gap-2 sm:gap-6">
+                     {isAdmin && <button onClick={()=>updateLiveMatch(m=>{ m.score2 = Math.max(0, m.score2-1); m.stats.t2Sot = Math.max(0, m.stats.t2Sot-1); return m;})} className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white flex items-center justify-center transition-colors shrink-0"><Minus size={14}/></button>}
+                     <span className="text-4xl sm:text-8xl font-black font-outfit text-white tabular-nums w-10 sm:w-24 leading-none shrink-0">{match.score2}</span>
+                     {isAdmin && <button onClick={()=>updateLiveMatch(m=>{ m.score2 += 1; m.stats.t2Sot += 1; return m;})} className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-white text-black hover:bg-zinc-200 flex items-center justify-center transition-colors shrink-0"><Plus size={14}/></button>}
                   </div>
                </div>
             </div>
 
-            <div className="bg-white/[0.02] rounded-3xl border border-white/5 p-8 mb-12">
-               <h4 className="text-center text-xs font-bold text-zinc-500 uppercase tracking-widest mb-8">Match Statistics</h4>
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white/[0.02] rounded-3xl border border-white/5 p-4 sm:p-8 mb-8 md:mb-12">
+               <h4 className="text-center text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 sm:mb-8">Match Statistics</h4>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8">
                   {[ {key:'Sot', label:'Shots on Target'}, {key:'Corners', label:'Corners'}, {key:'Fouls', label:'Fouls'} ].map(stat => (
                      <div key={stat.key} className="flex flex-col items-center">
                         <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-4">{stat.label}</span>
@@ -458,14 +463,14 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
                   )}
                </div>
                
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                   {[t1, t2].map(team => (
                      <div key={team.id} className="bg-white/[0.02] rounded-3xl border border-white/5 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3 bg-white/[0.02]">
+                        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 flex items-center gap-3 bg-white/[0.02]">
                            <div className="w-1.5 h-4 rounded-full" style={{backgroundColor: team.color}} />
-                           <h3 className="font-outfit font-bold text-white text-lg uppercase tracking-tight">{team.name}</h3>
+                           <h3 className="font-outfit font-bold text-white text-sm sm:text-lg uppercase tracking-tight">{team.name}</h3>
                         </div>
-                        <div className="divide-y divide-white/5 p-2">
+                        <div className="divide-y divide-white/5 p-1 sm:p-2">
                            {players.filter(p => p.teamId === team.id).map((p, pIdx) => {
                               const pEvents = match.events.filter(e => e.player === p.id);
                               const goals = pEvents.filter(e => e.type === 'goal');
@@ -842,14 +847,9 @@ export default function App() {
                     </div>
                  )}
                  {!isLive && (
-                    <div className="flex flex-col items-center md:flex-row md:items-center gap-1 md:gap-4 mt-2">
-                       <div className="flex items-center justify-center gap-3 text-white font-outfit text-2xl md:text-3xl font-black">
-                          <Calendar size={24} className="text-zinc-500 md:w-7 md:h-7"/>
-                          {new Date(heroMatch.time).toLocaleDateString([], {month:'long', day:'numeric'})}
-                       </div>
-                       <div className="text-zinc-400 font-outfit text-xl md:text-3xl font-black md:border-l md:border-white/20 md:pl-4">
-                          {new Date(heroMatch.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
-                       </div>
+                    <div className="flex items-center justify-center md:justify-start gap-3 text-white font-outfit text-4xl md:text-5xl font-black mt-2 w-full">
+                       <Clock size={32} className="text-zinc-500 md:w-10 md:h-10"/>
+                       {new Date(heroMatch.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
                     </div>
                  )}
               </div>
