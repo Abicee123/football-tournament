@@ -55,13 +55,13 @@ const initialMatches = [
   { id: 'f1', stage: 'final', team1: null, team2: null, status: 'upcoming', time: '2026-08-08T01:15', score1: 0, score2: 0, stats: { t1Sot:0, t1Corners:0, t1Fouls:0, t2Sot:0, t2Corners:0, t2Fouls:0 }, events: [], shootout: null, timer: { isRunning: false, baseElapsed: 0, lastStartTime: null, stoppage: 0, period: '1st Half' } }
 ];
 
-const LiveTimerDisplay = ({ timer, showAlarm }) => {
+const LiveTimerDisplay = ({ timer, match }) => {
   const [display, setDisplay] = useState('00:00');
-  const [isFlashing, setIsFlashing] = useState(false);
+  const [isRed, setIsRed] = useState(false);
   
   useEffect(() => {
     let interval;
-    const targetSeconds = 15 * 60;
+    const targetSeconds = (match.halfDuration || 15) * 60;
 
     const updateDisplay = () => {
       let currentElapsed = timer.baseElapsed;
@@ -73,24 +73,22 @@ const LiveTimerDisplay = ({ timer, showAlarm }) => {
       const s = (currentElapsed % 60).toString().padStart(2, '0');
       setDisplay(`${m}:${s}`);
 
-      if (showAlarm && timer.isRunning) {
-        const targetWithStoppage = targetSeconds + (timer.stoppage * 60);
-        if (currentElapsed >= targetWithStoppage && currentElapsed < targetWithStoppage + 2) {
-          setIsFlashing(true);
-        } else {
-          setIsFlashing(false);
-        }
-      } else {
-        setIsFlashing(false);
-      }
+      // Clock should turn red if elapsed time exceeds half duration boundaries
+      let overtime = false;
+      if (timer.period === '1st Half' && currentElapsed >= targetSeconds) overtime = true;
+      else if (timer.period === '2nd Half' && currentElapsed >= targetSeconds * 2) overtime = true;
+      else if (timer.period === 'ET 1st Half' && currentElapsed >= targetSeconds * 2 + (5 * 60)) overtime = true;
+      else if (timer.period === 'ET 2nd Half' && currentElapsed >= targetSeconds * 2 + (10 * 60)) overtime = true;
+
+      setIsRed(overtime);
     };
     
     updateDisplay();
     if (timer.isRunning) interval = setInterval(updateDisplay, 1000);
     return () => clearInterval(interval);
-  }, [timer, showAlarm]);
+  }, [timer, match]);
 
-  return <span className={isFlashing ? "animate-pulse text-rose-500" : ""}>{display}</span>;
+  return <span className={isRed ? "text-rose-500 font-black drop-shadow-[0_0_10px_rgba(244,63,94,0.4)]" : ""}>{display}</span>;
 };
 
 const StandingsWidget = ({ standings }) => (
@@ -169,7 +167,9 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
     if (!isAdmin || match.status === 'completed') return;
     updateLiveMatch(m => {
       if (m.timer.isRunning) {
-         m.timer.baseElapsed += Math.floor((Date.now() - m.timer.lastStartTime) / 1000);
+         if (m.timer.lastStartTime) {
+            m.timer.baseElapsed += Math.floor((Date.now() - m.timer.lastStartTime) / 1000);
+         }
          m.timer.isRunning = false;
          m.timer.lastStartTime = null;
       } else {
@@ -224,13 +224,18 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
     else if (match.status === 'live' && match.timer.period === '1st Half') {
       updateLiveMatch(m => {
         m.timer.period = 'HT'; m.timer.isRunning = false;
-        m.timer.baseElapsed += Math.floor((Date.now() - m.timer.lastStartTime) / 1000); m.timer.lastStartTime = null;
+        if (m.timer.lastStartTime) {
+            m.timer.baseElapsed += Math.floor((Date.now() - m.timer.lastStartTime) / 1000); 
+        }
+        m.timer.lastStartTime = null;
         return m;
       });
     }
     else if (match.status === 'live' && match.timer.period === 'HT') {
       updateLiveMatch(m => {
         m.timer.period = '2nd Half'; m.timer.isRunning = true; m.timer.lastStartTime = Date.now(); m.timer.stoppage = 0;
+        // Strictly set clock to start at half duration (e.g., 10:00 or 15:00)
+        m.timer.baseElapsed = (m.halfDuration || 15) * 60; 
         return m;
       });
     }
@@ -240,12 +245,19 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
       } else {
         updateLiveMatch(m => {
           m.status = 'completed'; m.timer.period = 'FT'; m.timer.isRunning = false;
+          if (m.timer.lastStartTime) { m.timer.baseElapsed += Math.floor((Date.now() - m.timer.lastStartTime) / 1000); }
+          m.timer.lastStartTime = null;
           return m;
         });
       }
     }
     else if (match.timer.period === 'ET 1st Half') {
-       updateLiveMatch(m => { m.timer.period = 'ET HT'; m.timer.isRunning = false; return m; });
+       updateLiveMatch(m => { 
+           m.timer.period = 'ET HT'; m.timer.isRunning = false; 
+           if (m.timer.lastStartTime) { m.timer.baseElapsed += Math.floor((Date.now() - m.timer.lastStartTime) / 1000); }
+           m.timer.lastStartTime = null;
+           return m; 
+       });
     }
     else if (match.timer.period === 'ET HT') {
        updateLiveMatch(m => { m.timer.period = 'ET 2nd Half'; m.timer.isRunning = true; m.timer.lastStartTime = Date.now(); return m; });
@@ -254,11 +266,15 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
        if (match.score1 === match.score2) {
           updateLiveMatch(m => {
             m.status = 'completed'; m.timer.period = 'Pens'; m.timer.isRunning = false; m.shootout = { t1: [{player:'', res:null}, {player:'', res:null}, {player:'', res:null}], t2: [{player:'', res:null}, {player:'', res:null}, {player:'', res:null}], tossWinner: null };
+            if (m.timer.lastStartTime) { m.timer.baseElapsed += Math.floor((Date.now() - m.timer.lastStartTime) / 1000); }
+            m.timer.lastStartTime = null;
             return m;
           });
        } else {
           updateLiveMatch(m => {
             m.status = 'completed'; m.timer.period = 'FT'; m.timer.isRunning = false;
+            if (m.timer.lastStartTime) { m.timer.baseElapsed += Math.floor((Date.now() - m.timer.lastStartTime) / 1000); }
+            m.timer.lastStartTime = null;
             return m;
           });
        }
@@ -287,9 +303,9 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
               <div className="bg-zinc-950 border border-white/10 p-8 rounded-3xl max-w-sm w-full shadow-2xl flex flex-col items-center text-center">
                  {dialogState === 'RESET_TIMER' && (
                     <>
-                       <RotateCcw size={40} className="text-rose-500 mb-4" />
-                       <h3 className="text-white font-bold text-lg mb-2">Reset Timer?</h3>
-                       <p className="text-zinc-400 text-sm mb-6">This will reset the elapsed time to 00:00 and pause the clock.</p>
+                       <RotateCcw size={40} className="text-amber-500 mb-4" />
+                       <h3 className="text-white font-bold text-lg mb-2">Reset Clock Timer?</h3>
+                       <p className="text-zinc-400 text-sm mb-6">This will reset the elapsed time to 00:00 and pause the clock. Scores and events will remain.</p>
                        <div className="flex gap-3 w-full">
                           <button onClick={() => setDialogState(null)} className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest transition-colors">Cancel</button>
                           <button onClick={() => {
@@ -301,7 +317,31 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
                                 return m;
                              });
                              setDialogState(null);
-                          }} className="flex-1 py-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs uppercase tracking-widest transition-colors">Reset</button>
+                          }} className="flex-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-widest transition-colors">Reset Time</button>
+                       </div>
+                    </>
+                 )}
+                 {dialogState === 'RESET_MATCH' && (
+                    <>
+                       <AlertCircle size={40} className="text-rose-500 mb-4" />
+                       <h3 className="text-white font-bold text-lg mb-2">Reset Entire Match?</h3>
+                       <p className="text-zinc-400 text-sm mb-6">This will clear all scores, stats, and events, reverting the match to upcoming. Ideal for clearing trial runs.</p>
+                       <div className="flex gap-3 w-full">
+                          <button onClick={() => setDialogState(null)} className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest transition-colors">Cancel</button>
+                          <button onClick={() => {
+                             updateLiveMatch(m => {
+                                m.status = 'upcoming';
+                                m.score1 = 0;
+                                m.score2 = 0;
+                                m.stats = { t1Sot:0, t1Corners:0, t1Fouls:0, t2Sot:0, t2Corners:0, t2Fouls:0 };
+                                m.events = [];
+                                m.shootout = null;
+                                m.timer = { isRunning: false, baseElapsed: 0, lastStartTime: null, stoppage: 0, period: '1st Half' };
+                                m.halfDuration = 15;
+                                return m;
+                             });
+                             setDialogState(null);
+                          }} className="flex-1 py-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs uppercase tracking-widest transition-colors">Confirm Reset</button>
                        </div>
                     </>
                  )}
@@ -361,6 +401,11 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
           
           <div className="sticky top-0 z-30 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-white/5 p-3 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-xl">
             <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+               {isAdmin && (
+                 <button onClick={() => setDialogState('RESET_MATCH')} className="bg-rose-500/10 text-rose-500 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm hover:bg-rose-500/20 border border-rose-500/20 transition-colors flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+                    <RotateCcw size={14}/> <span className="hidden sm:inline">Reset Match</span>
+                 </button>
+               )}
                {isAdmin && match.status !== 'completed' && (
                   <button onClick={handleProgression} className="bg-white text-black px-4 py-2 sm:px-6 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm hover:bg-zinc-200 transition-colors flex items-center gap-1 sm:gap-2 shadow-[0_0_15px_rgba(255,255,255,0.3)] whitespace-nowrap">
                      {getProgressionBtnText()} <ChevronRight size={14}/>
@@ -379,7 +424,7 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
                   <div className="flex items-center gap-2">
                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{match.timer.period}</span>
                      <div className="text-lg sm:text-xl font-bold font-outfit text-white tabular-nums flex items-center gap-1">
-                        <LiveTimerDisplay timer={match.timer} showAlarm={true} />
+                        <LiveTimerDisplay timer={match.timer} match={match} />
                         {match.timer.stoppage > 0 && <span className="text-rose-500 text-[10px] sm:text-sm w-4">+{match.timer.stoppage}</span>}
                      </div>
                   </div>
@@ -454,84 +499,115 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
             </div>
 
             <div>
-               <div className="flex justify-between items-center mb-6">
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Match Rosters</h4>
-                  {isAdmin && (
-                     <button onClick={() => setDeleteMode(!deleteMode)} className={`text-[10px] font-bold px-4 py-2 rounded-lg uppercase tracking-widest transition-colors ${deleteMode ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(243,64,84,0.5)]' : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'}`}>
-                        {deleteMode ? 'Delete Mode Active' : 'Enable Delete Mode'}
-                     </button>
-                  )}
-               </div>
-               
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
-                  {[t1, t2].map(team => (
-                     <div key={team.id} className="bg-white/[0.02] rounded-3xl border border-white/5 overflow-hidden">
-                        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 flex items-center gap-3 bg-white/[0.02]">
-                           <div className="w-1.5 h-4 rounded-full" style={{backgroundColor: team.color}} />
-                           <h3 className="font-outfit font-bold text-white text-sm sm:text-lg uppercase tracking-tight">{team.name}</h3>
-                        </div>
-                        <div className="divide-y divide-white/5 p-1 sm:p-2">
-                           {players.filter(p => p.teamId === team.id).map((p, pIdx) => {
-                              const pEvents = match.events.filter(e => e.player === p.id);
-                              const goals = pEvents.filter(e => e.type === 'goal');
-                              const assists = pEvents.filter(e => e.type === 'assist').length;
-                              const yellows = pEvents.filter(e => e.type === 'yellow').length;
-                              const reds = pEvents.filter(e => e.type === 'red').length;
-                              const saves = pEvents.filter(e => e.type === 'save').length;
-                              
-                              const isCaptain = pIdx === 0;
-                              const isIcon = pIdx === 1;
-
+               {!isAdmin ? (
+                  // VIEWER VIEW: Show Match Timeline / Important Moments
+                  <div>
+                    <h4 className="text-center text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 sm:mb-8">Important Moments</h4>
+                    <div className="bg-white/[0.02] rounded-3xl border border-white/5 p-4 sm:p-8">
+                       {match.events.length === 0 ? (
+                         <p className="text-zinc-500 text-center text-sm font-bold py-8">No significant events yet.</p>
+                       ) : (
+                         <div className="flex flex-col gap-2 relative before:absolute before:inset-y-0 before:w-px before:bg-white/10 before:left-1/2 before:-translate-x-1/2">
+                           {[...match.events].sort((a,b) => a.minute - b.minute).map(e => {
+                              const p = players.find(x => x.id === e.player);
+                              const t = getTeam(e.team);
+                              const isT1 = e.team === match.team1;
                               return (
-                                 <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-white/[0.02] transition-colors gap-4 rounded-xl">
-                                    <div className="flex items-center gap-3">
-                                       <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-zinc-400 font-bold text-[9px] border border-white/5 relative">
-                                          {p.position}
-                                          {isCaptain && <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-500 text-black text-[8px] font-black rounded-full flex items-center justify-center border border-black shadow-[0_0_8px_rgba(245,158,11,0.5)]">C</span>}
-                                          {isIcon && !isCaptain && <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-purple-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border border-black shadow-[0_0_8px_rgba(168,85,247,0.5)]">★</span>}
-                                       </div>
-                                       <div>
-                                          <span className="font-bold text-zinc-200 block text-sm">{p.name}</span>
-                                          <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
-                                             {goals.map((g, i) => <span key={i} className="text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">⚽ {g.minute}'</span>)}
-                                             {assists > 0 && <span className="text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">{assists} Ast</span>}
-                                             {yellows > 0 && <span className="text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded flex items-center gap-1"><div className="w-2 h-2.5 bg-yellow-400 rounded-sm shadow-sm" /> {yellows}</span>}
-                                             {reds > 0 && <span className="text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded flex items-center gap-1"><div className="w-2 h-2.5 bg-rose-500 rounded-sm shadow-sm" /> {reds}</span>}
-                                             {saves > 0 && p.position === 'GK' && <span className="text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">🧤 {saves}</span>}
-                                          </div>
-                                       </div>
-                                    </div>
-                                    
-                                    {isAdmin && (
-                                       <div className="flex items-center gap-1 self-start sm:self-auto flex-wrap">
-                                          {[ 
-                                             { type: 'goal', icon: '⚽', hasStat: goals.length > 0 },
-                                             { type: 'assist', icon: '👟', hasStat: assists > 0 },
-                                             { type: 'yellow', customIcon: <div className="w-2 h-2.5 bg-yellow-400 rounded-sm shadow-sm" />, hasStat: yellows > 0 },
-                                             { type: 'red', customIcon: <div className="w-2 h-2.5 bg-rose-500 rounded-sm shadow-sm" />, hasStat: reds > 0 }
-                                          ].map(act => (
-                                             <div key={act.type} className={`flex items-center rounded-lg border overflow-hidden transition-all h-8 ${act.hasStat ? 'border-white/20 bg-white/10' : 'border-white/5 bg-transparent'}`}>
-                                                <button onClick={() => deleteMode ? removeEvent(team.id, p.id, act.type) : addEvent(team.id, p.id, act.type)} className={`px-2 h-full flex items-center justify-center hover:bg-white/10 ${deleteMode ? 'hover:bg-rose-500/20' : ''}`}>
-                                                   {act.customIcon || <span className="text-[12px]">{act.icon}</span>}
-                                                </button>
-                                             </div>
-                                          ))}
-                                          {p.position === 'GK' && (
-                                             <div className={`flex items-center rounded-lg border overflow-hidden transition-all h-8 ml-1 ${saves > 0 ? 'border-purple-500/30 bg-purple-500/10' : 'border-white/5 bg-transparent'}`}>
-                                                <button onClick={() => deleteMode ? removeEvent(team.id, p.id, 'save') : addEvent(team.id, p.id, 'save')} className={`px-2 h-full flex items-center justify-center hover:bg-white/10 ${deleteMode ? 'hover:bg-rose-500/20' : ''}`}>
-                                                   <span className="text-[12px]">🧤</span>
-                                                </button>
-                                             </div>
-                                          )}
-                                       </div>
-                                    )}
-                                 </div>
+                                <div key={e.id} className={`flex items-center gap-4 py-2 w-1/2 relative ${isT1 ? 'flex-row self-start pr-8 justify-end' : 'flex-row-reverse self-end pl-8 justify-end'}`}>
+                                   <div className={`flex flex-col ${isT1 ? 'text-right' : 'text-left'}`}>
+                                      <span className="font-bold text-white text-sm sm:text-base">{p?.name || 'Unknown Player'}</span>
+                                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest" style={{color: t.color}}>{t.name}</span>
+                                   </div>
+                                   <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 border border-white/10 bg-[#0a0a0a] shadow-sm z-10 absolute top-1/2 -translate-y-1/2 ${isT1 ? '-right-4 sm:-right-5' : '-left-4 sm:-left-5'}`}>
+                                      {e.type === 'goal' ? '⚽' : e.type === 'assist' ? '👟' : e.type === 'yellow' ? <div className="w-2.5 h-3.5 bg-yellow-400 rounded-sm shadow-sm" /> : e.type === 'red' ? <div className="w-2.5 h-3.5 bg-rose-500 rounded-sm shadow-sm" /> : '🧤'}
+                                   </div>
+                                   <span className={`text-xs font-black text-zinc-500 w-8 absolute top-1/2 -translate-y-1/2 ${isT1 ? '-right-[3.5rem] sm:-right-[4.5rem] text-left' : '-left-[3.5rem] sm:-left-[4.5rem] text-right'}`}>{e.minute}'</span>
+                                </div>
                               )
                            })}
-                        </div>
+                         </div>
+                       )}
+                    </div>
+                  </div>
+               ) : (
+                  // ADMIN VIEW: Show Full Rosters with Event Controls
+                  <>
+                     <div className="flex justify-between items-center mb-6">
+                        <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Match Rosters</h4>
+                        <button onClick={() => setDeleteMode(!deleteMode)} className={`text-[10px] font-bold px-4 py-2 rounded-lg uppercase tracking-widest transition-colors ${deleteMode ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(243,64,84,0.5)]' : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'}`}>
+                           {deleteMode ? 'Delete Mode Active' : 'Enable Delete Mode'}
+                        </button>
                      </div>
-                  ))}
-               </div>
+                     
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+                        {[t1, t2].map(team => (
+                           <div key={team.id} className="bg-white/[0.02] rounded-3xl border border-white/5 overflow-hidden">
+                              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 flex items-center gap-3 bg-white/[0.02]">
+                                 <div className="w-1.5 h-4 rounded-full" style={{backgroundColor: team.color}} />
+                                 <h3 className="font-outfit font-bold text-white text-sm sm:text-lg uppercase tracking-tight">{team.name}</h3>
+                              </div>
+                              <div className="divide-y divide-white/5 p-1 sm:p-2">
+                                 {players.filter(p => p.teamId === team.id).map((p, pIdx) => {
+                                    const pEvents = match.events.filter(e => e.player === p.id);
+                                    const goals = pEvents.filter(e => e.type === 'goal');
+                                    const assists = pEvents.filter(e => e.type === 'assist').length;
+                                    const yellows = pEvents.filter(e => e.type === 'yellow').length;
+                                    const reds = pEvents.filter(e => e.type === 'red').length;
+                                    const saves = pEvents.filter(e => e.type === 'save').length;
+                                    
+                                    const isCaptain = pIdx === 0;
+                                    const isIcon = pIdx === 1;
+
+                                    return (
+                                       <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-white/[0.02] transition-colors gap-4 rounded-xl">
+                                          <div className="flex items-center gap-3">
+                                             <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-zinc-400 font-bold text-[9px] border border-white/5 relative">
+                                                {p.position}
+                                                {isCaptain && <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-500 text-black text-[8px] font-black rounded-full flex items-center justify-center border border-black shadow-[0_0_8px_rgba(245,158,11,0.5)]">C</span>}
+                                                {isIcon && !isCaptain && <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-purple-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border border-black shadow-[0_0_8px_rgba(168,85,247,0.5)]">★</span>}
+                                             </div>
+                                             <div>
+                                                <span className="font-bold text-zinc-200 block text-sm">{p.name}</span>
+                                                <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
+                                                   {goals.map((g, i) => <span key={i} className="text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">⚽ {g.minute}'</span>)}
+                                                   {assists > 0 && <span className="text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">{assists} Ast</span>}
+                                                   {yellows > 0 && <span className="text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded flex items-center gap-1"><div className="w-2 h-2.5 bg-yellow-400 rounded-sm shadow-sm" /> {yellows}</span>}
+                                                   {reds > 0 && <span className="text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded flex items-center gap-1"><div className="w-2 h-2.5 bg-rose-500 rounded-sm shadow-sm" /> {reds}</span>}
+                                                   {saves > 0 && p.position === 'GK' && <span className="text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">🧤 {saves}</span>}
+                                                </div>
+                                             </div>
+                                          </div>
+                                          
+                                          <div className="flex items-center gap-1 self-start sm:self-auto flex-wrap">
+                                             {[ 
+                                                { type: 'goal', icon: '⚽', hasStat: goals.length > 0 },
+                                                { type: 'assist', icon: '👟', hasStat: assists > 0 },
+                                                { type: 'yellow', customIcon: <div className="w-2 h-2.5 bg-yellow-400 rounded-sm shadow-sm" />, hasStat: yellows > 0 },
+                                                { type: 'red', customIcon: <div className="w-2 h-2.5 bg-rose-500 rounded-sm shadow-sm" />, hasStat: reds > 0 }
+                                             ].map(act => (
+                                                <div key={act.type} className={`flex items-center rounded-lg border overflow-hidden transition-all h-8 ${act.hasStat ? 'border-white/20 bg-white/10' : 'border-white/5 bg-transparent'}`}>
+                                                   <button onClick={() => deleteMode ? removeEvent(team.id, p.id, act.type) : addEvent(team.id, p.id, act.type)} className={`px-2 h-full flex items-center justify-center hover:bg-white/10 ${deleteMode ? 'hover:bg-rose-500/20' : ''}`}>
+                                                      {act.customIcon || <span className="text-[12px]">{act.icon}</span>}
+                                                   </button>
+                                                </div>
+                                             ))}
+                                             {p.position === 'GK' && (
+                                                <div className={`flex items-center rounded-lg border overflow-hidden transition-all h-8 ml-1 ${saves > 0 ? 'border-purple-500/30 bg-purple-500/10' : 'border-white/5 bg-transparent'}`}>
+                                                   <button onClick={() => deleteMode ? removeEvent(team.id, p.id, 'save') : addEvent(team.id, p.id, 'save')} className={`px-2 h-full flex items-center justify-center hover:bg-white/10 ${deleteMode ? 'hover:bg-rose-500/20' : ''}`}>
+                                                      <span className="text-[12px]">🧤</span>
+                                                   </button>
+                                                </div>
+                                             )}
+                                          </div>
+                                       </div>
+                                    )
+                                 })}
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                  </>
+               )}
             </div>
 
             {match.shootout && (
@@ -823,7 +899,6 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1 flex flex-col">
         
-        {}
         {isTournamentOver ? (
            <div className="w-full bg-gradient-to-br from-amber-500/20 to-amber-900/40 border border-amber-500/30 rounded-[2rem] p-10 md:p-16 mb-12 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-[0_0_80px_rgba(245,158,11,0.15)]">
               <Trophy size={64} className="text-amber-500 mb-6 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]" />
@@ -841,7 +916,7 @@ export default function App() {
                  </div>
                  {isLive && (
                     <div className="text-4xl md:text-5xl font-outfit font-black text-white flex items-center justify-center md:justify-start gap-4 mb-2 tabular-nums tracking-tighter w-full">
-                       <LiveTimerDisplay timer={heroMatch.timer} showAlarm={false} />
+                       <LiveTimerDisplay timer={heroMatch.timer} match={heroMatch} />
                        {heroMatch.timer.stoppage > 0 && <span className="text-rose-500 text-2xl">+{heroMatch.timer.stoppage}'</span>}
                        <span className="text-sm font-semibold text-zinc-500 uppercase tracking-widest ml-2 bg-white/5 px-3 py-1 rounded-lg">{heroMatch.timer.period}</span>
                     </div>
@@ -871,7 +946,6 @@ export default function App() {
            </div>
         ) : null}
 
-        {}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 flex-1">
            <div className="xl:col-span-2 flex flex-col h-full">
               <div className="flex overflow-x-auto gap-2 mb-8 bg-white/[0.02] p-2 rounded-2xl border border-white/10 backdrop-blur-md">
@@ -899,7 +973,6 @@ export default function App() {
                  <AnimatePresence mode="wait">
                    <motion.div key={activeTab} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} transition={{duration:0.2}} className="h-full">
                      
-                     {}
                      {activeTab === 'fixtures' && (
                        <div className="space-y-12 pb-10">
                          {['group', 'semi', 'final'].map(stage => {
@@ -923,7 +996,6 @@ export default function App() {
                                    return (
                                      <div 
                                        key={m.id} 
-                                       // Fixed click handler to allow public viewing
                                        onClick={() => isInteractive && setEditingMatchId(m.id)}
                                        className={`bg-white/[0.02] backdrop-blur-xl rounded-3xl border border-white/5 p-6 transition-all group relative overflow-hidden shadow-[0_4px_24px_0_rgba(0,0,0,0.2)]
                                          ${isInteractive ? 'cursor-pointer hover:bg-white/[0.05] hover:border-white/20' : ''}
@@ -973,7 +1045,7 @@ export default function App() {
                                        {isMatchLive && (
                                           <div className="mt-8 pt-6 border-t border-white/5 flex justify-center items-center gap-4">
                                              <div className="text-2xl font-black font-outfit text-white tabular-nums tracking-tighter flex items-center gap-2">
-                                                <LiveTimerDisplay timer={m.timer} showAlarm={false} />
+                                                <LiveTimerDisplay timer={m.timer} match={m} />
                                                 {m.timer.stoppage > 0 && <span className="text-rose-500 text-lg">+{m.timer.stoppage}</span>}
                                              </div>
                                              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">{m.timer.period}</span>
@@ -989,7 +1061,6 @@ export default function App() {
                        </div>
                      )}
 
-                     {}
                      {activeTab === 'teams' && (
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                          {teams.map(team => (
@@ -1091,7 +1162,6 @@ export default function App() {
                        </div>
                      )}
 
-                     {}
                      {activeTab === 'stats' && (
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                          {[
@@ -1200,7 +1270,6 @@ export default function App() {
                        </div>
                      )}
                      
-                     {}
                      {activeTab === 'standings_mobile' && (
                         <div className="xl:hidden pb-10">
                            <StandingsWidget standings={standings} />
@@ -1212,7 +1281,6 @@ export default function App() {
               </div>
            </div>
 
-           {}
            <div className="hidden xl:block xl:col-span-1 h-full">
               <div className="sticky top-28 h-[calc(100vh-140px)]">
                  <StandingsWidget standings={standings} />
@@ -1222,8 +1290,6 @@ export default function App() {
         </div>
       </main>
 
-      {}
-      {/* ADDED THIS BLOCK: Properly renders the Match Dashboard when a match card is clicked */}
       {editingMatchId && (
         <MatchDashboard 
           matchId={editingMatchId} 
