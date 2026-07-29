@@ -1084,35 +1084,22 @@ export default function App() {
            </div>
         ) : null}
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 flex-1 relative z-10">
-           <div className="xl:col-span-2 flex flex-col h-full">
+        {}
+        <div className="flex flex-col flex-1 relative z-10 w-full max-w-6xl mx-auto">
+           <div className="flex flex-col h-full w-full">
               
-              <div className="flex overflow-x-auto gap-2 md:gap-4 mb-8 bg-zinc-950/80 p-2 sm:p-3 md:p-4 rounded-3xl md:rounded-[2rem] border border-white/10 backdrop-blur-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5)] w-full max-w-full xl:max-w-fit mx-auto xl:mx-0 relative z-20 snap-x">
+              <div className="flex overflow-x-auto gap-2 md:gap-4 mb-8 bg-zinc-950/80 p-2 sm:p-3 md:p-4 rounded-3xl md:rounded-[2rem] border border-white/10 backdrop-blur-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5)] w-full max-w-full xl:max-w-fit mx-auto relative z-20 snap-x">
                 {[
                   { id: 'fixtures', label: 'Matches', icon: Calendar },
                   { id: 'teams', label: 'Squads', icon: Users },
                   { id: 'stats', label: 'Stats', icon: Activity },
-                  { id: 'standings_mobile', label: 'Table', icon: Trophy, hiddenDesktop: true }
+                  { id: 'standings', label: 'Table', icon: Trophy }
                 ].map(tab => {
                   const Icon = tab.icon;
-                  const isActive = activeTab === tab.id.replace('_mobile', '');
-                  
-                  if (tab.hiddenDesktop) {
-                     return (
-                        <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`xl:hidden relative flex items-center gap-1.5 sm:gap-2 md:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap group skew-x-[-10deg] shrink-0 snap-center ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}>
-                           {isActive && (
-                              <motion.div layoutId="activeTabMobile" className="absolute inset-0 bg-white/10 border border-white/20 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
-                           )}
-                           <div className={`relative z-10 flex items-center gap-1.5 sm:gap-2 transition-transform duration-300 skew-x-[10deg] ${isActive ? 'scale-105' : 'group-hover:scale-105'}`}>
-                              <Icon size={16} className={isActive ? 'text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'text-zinc-600'} /> 
-                              {tab.label.replace(' (Mobile)', '')}
-                           </div>
-                        </button>
-                     );
-                  }
+                  const isActive = activeTab === tab.id;
 
                   return (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id.replace('_mobile',''))} className={`relative flex items-center gap-1.5 sm:gap-2 md:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap group skew-x-[-10deg] shrink-0 snap-center ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}>
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative flex items-center gap-1.5 sm:gap-2 md:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap group skew-x-[-10deg] shrink-0 snap-center ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}>
                       {isActive && (
                          <motion.div layoutId="activeTab" className="absolute inset-0 bg-white/10 border border-white/20 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
                       )}
@@ -1142,7 +1129,8 @@ export default function App() {
                                  <div className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent" />
                                </h3>
                                
-                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                               {}
+                               <div className={`grid grid-cols-1 gap-6 ${stage === 'group' ? 'md:grid-cols-2' : ''}`}>
                                  {stageMatches.map(m => {
                                    const mt1 = getTeam(m.team1);
                                    const mt2 = getTeam(m.team2);
@@ -1217,24 +1205,38 @@ export default function App() {
                                              )}
                                           </div>
                                        </div>
-
-                                       <div className="flex flex-col space-y-4 md:space-y-5 relative z-10 w-full mt-auto">
-                                         <div className="flex items-center justify-between w-full gap-4">
-                                           <div className="flex items-center gap-3 min-w-0 flex-1">
-                                             <div className="w-3 h-3 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.3)] border border-white/20" style={{backgroundColor: mt1Color, boxShadow: `0 0 15px ${mt1Color}`}} />
-                                             <span className={`font-outfit font-black uppercase tracking-tight truncate block text-xl ${isMatchLive || stage === 'final' ? 'text-white' : 'text-zinc-200'}`}>{mt1.name}</span>
-                                           </div>
-                                           <span className={`font-outfit font-black tabular-nums shrink-0 text-3xl md:text-4xl ${isMatchLive || stage === 'final' ? 'text-white drop-shadow-md' : 'text-zinc-500'}`}>{m.score1}</span>
-                                         </div>
-                                         
-                                         <div className="flex items-center justify-between w-full gap-4">
-                                           <div className="flex items-center gap-3 min-w-0 flex-1">
-                                             <div className="w-3 h-3 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.3)] border border-white/20" style={{backgroundColor: mt2Color, boxShadow: `0 0 15px ${mt2Color}`}} />
-                                             <span className={`font-outfit font-black uppercase tracking-tight truncate block text-xl ${isMatchLive || stage === 'final' ? 'text-white' : 'text-zinc-200'}`}>{mt2.name}</span>
-                                           </div>
-                                           <span className={`font-outfit font-black tabular-nums shrink-0 text-3xl md:text-4xl ${isMatchLive || stage === 'final' ? 'text-white drop-shadow-md' : 'text-zinc-500'}`}>{m.score2}</span>
-                                         </div>
+                                       
+                                       <div className={`flex relative z-10 w-full ${isMatchLive ? 'flex-col md:flex-row justify-around items-center gap-4' : 'flex-col space-y-4'}`}>
+                                          <div className={`flex items-center justify-between gap-4 w-full ${isMatchLive ? 'md:w-auto md:flex-1' : ''}`}>
+                                             <div className="flex items-center gap-3 md:gap-4">
+                                                <div className="w-3 h-3 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.3)] border border-white/20 shrink-0" style={{backgroundColor: mt1Color, boxShadow: `0 0 15px ${mt1Color}`}} />
+                                                <span className={`font-outfit font-black uppercase tracking-tight line-clamp-1 ${isMatchLive ? 'text-2xl md:text-3xl text-white' : 'text-lg md:text-xl text-zinc-200'}`}>{mt1.name}</span>
+                                             </div>
+                                             <span className={`font-outfit font-black tabular-nums ${isMatchLive ? 'text-4xl md:text-6xl text-white drop-shadow-md' : 'text-2xl md:text-3xl text-zinc-500'}`}>{m.score1}</span>
+                                          </div>
+                                          
+                                          {isMatchLive && <div className="text-zinc-600 font-black italic text-xl skew-x-[-10deg] shrink-0">VS</div>}
+                                          
+                                          <div className={`flex items-center justify-between gap-4 w-full ${isMatchLive ? 'md:w-auto md:flex-1' : ''}`}>
+                                             <div className="flex items-center gap-3 md:gap-4">
+                                                <div className="w-3 h-3 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.3)] border border-white/20 shrink-0" style={{backgroundColor: mt2Color, boxShadow: `0 0 15px ${mt2Color}`}} />
+                                                <span className={`font-outfit font-black uppercase tracking-tight line-clamp-1 ${isMatchLive ? 'text-2xl md:text-3xl text-white' : 'text-lg md:text-xl text-zinc-200'}`}>{mt2.name}</span>
+                                             </div>
+                                             <span className={`font-outfit font-black tabular-nums ${isMatchLive ? 'text-4xl md:text-6xl text-white drop-shadow-md' : 'text-2xl md:text-3xl text-zinc-500'}`}>{m.score2}</span>
+                                          </div>
                                        </div>
+
+                                       {isMatchLive && (
+                                          <div className="mt-8 pt-6 border-t border-white/10 flex justify-center items-center gap-6 relative z-10">
+                                             <div className="text-3xl font-black font-outfit text-white tabular-nums tracking-tighter flex items-center gap-2">
+                                                <LiveTimerDisplay timer={m.timer} match={m} />
+                                                {m.timer.stoppage > 0 && <span className="text-rose-500 text-xl">+{m.timer.stoppage}</span>}
+                                             </div>
+                                             <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] bg-black/50 border border-white/5 px-4 py-1.5 rounded-md skew-x-[-10deg]">
+                                                <div className="skew-x-[10deg]">{m.timer.period}</div>
+                                             </span>
+                                          </div>
+                                       )}
                                      </motion.div>
                                    )
                                  })}
@@ -1245,6 +1247,7 @@ export default function App() {
                        </div>
                      )}
 
+                     {}
                      {activeTab === 'teams' && (
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                          {teams.map(team => (
@@ -1414,86 +1417,81 @@ export default function App() {
                                       <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5">
                                          <span className="text-xs font-bold text-zinc-300">Points:</span>
                                          <div className="flex items-center gap-4">
-                                            <button onClick={() => {
-                                               const newPlayers = players.map(p => p.id === adminMvpPlayer ? {...p, mvpPoints: (p.mvpPoints||0)-1} : p);
-                                               syncToDB(null, null, newPlayers);
-                                            }} className="w-8 h-8 rounded-lg bg-white/10 text-white hover:bg-white/20 flex items-center justify-center"><Minus size={14}/></button>
-                                            <span className="font-outfit font-black text-xl text-white tabular-nums w-8 text-center">{players.find(p=>p.id===adminMvpPlayer)?.mvpPoints || 0}</span>
-                                            <button onClick={() => {
-                                               const newPlayers = players.map(p => p.id === adminMvpPlayer ? {...p, mvpPoints: (p.mvpPoints||0)+1} : p);
-                                               syncToDB(null, null, newPlayers);
-                                            }} className="w-8 h-8 rounded-lg bg-white/10 text-white hover:bg-white/20 flex items-center justify-center"><Plus size={14}/></button>
-                                         </div>
-                                      </div>
-                                   )}
-                                </div>
+                                          <button onClick={() => {
+                                             const newPlayers = players.map(p => p.id === adminMvpPlayer ? {...p, mvpPoints: (p.mvpPoints||0)-1} : p);
+                                             syncToDB(null, null, newPlayers);
+                                          }} className="w-8 h-8 rounded-lg bg-white/10 text-white hover:bg-white/20 flex items-center justify-center"><Minus size={14}/></button>
+                                          <span className="font-outfit font-black text-xl text-white tabular-nums w-8 text-center">{players.find(p=>p.id===adminMvpPlayer)?.mvpPoints || 0}</span>
+                                          <button onClick={() => {
+                                             const newPlayers = players.map(p => p.id === adminMvpPlayer ? {...p, mvpPoints: (p.mvpPoints||0)+1} : p);
+                                             syncToDB(null, null, newPlayers);
+                                          }} className="w-8 h-8 rounded-lg bg-white/10 text-white hover:bg-white/20 flex items-center justify-center"><Plus size={14}/></button>
+                                       </div>
+                                    </div>
+                                 )}
+                              </div>
+                           )}
+
+                           <div className="space-y-3 relative z-10">
+                             {board.data.length === 0 ? (
+                               <div className="bg-black/40 border border-white/5 rounded-xl py-8 flex items-center justify-center">
+                                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">No records yet</p>
+                               </div>
+                             ) : (
+                               board.data.slice(0, 5).map((p, idx) => {
+                                 const pTeam = getTeam(p.teamId);
+                                 const isTop = idx === 0;
+                                 return (
+                                   <motion.div 
+                                     key={p.id} 
+                                     animate={isTop ? { boxShadow: [`0 0 0px ${pTeam.color}00`, `0 0 25px ${pTeam.color}60`, `0 0 0px ${pTeam.color}00`] } : {}}
+                                     transition={isTop ? { repeat: Infinity, duration: 2.5, ease: "easeInOut" } : {}}
+                                     className={`flex items-center justify-between p-4 rounded-xl transition-colors shadow-sm ${isTop ? 'bg-gradient-to-r from-white/10 to-white/5 border' : 'bg-white/5 border border-white/5 hover:bg-white/10'}`}
+                                     style={isTop ? { borderColor: `${pTeam.color}80` } : {}}
+                                   >
+                                     <div className="flex items-center gap-4">
+                                       <span className={`font-outfit font-black w-4 text-center text-lg ${isTop ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'text-zinc-600'}`}>{idx + 1}</span>
+                                       <div className="w-3 h-3 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]" style={{backgroundColor: pTeam.color, boxShadow: isTop ? `0 0 15px ${pTeam.color}` : undefined}} />
+                                       <div>
+                                          <span className={`font-black text-sm block uppercase tracking-wide ${isTop ? 'text-white' : 'text-zinc-200'}`}>{p.name}</span>
+                                          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: isTop ? pTeam.color : '#71717a' }}>{pTeam.name} • {p.position}</span>
+                                       </div>
+                                     </div>
+                                     <div className="flex flex-col items-end">
+                                        <span className={`font-outfit font-black text-3xl drop-shadow-md ${isTop ? 'text-white' : 'text-zinc-300'}`}>{p.stat}</span>
+                                        {board.title === 'Golden Glove' && (
+                                           <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest bg-black/50 px-2 py-0.5 rounded">{p.totalSaves} SV • {p.cleanSheets} CS</span>
+                                        )}
+                                     </div>
+                                   </motion.div>
+                                 )
+                               })
                              )}
-
-                             <div className="space-y-3 relative z-10">
-                               {board.data.length === 0 ? (
-                                 <div className="bg-black/40 border border-white/5 rounded-xl py-8 flex items-center justify-center">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">No records yet</p>
-                                 </div>
-                               ) : (
-                                 board.data.slice(0, 5).map((p, idx) => {
-                                   const pTeam = getTeam(p.teamId);
-                                   const isTop = idx === 0;
-                                   return (
-                                     <motion.div 
-                                       key={p.id} 
-                                       animate={isTop ? { boxShadow: [`0 0 0px ${pTeam.color}00`, `0 0 25px ${pTeam.color}60`, `0 0 0px ${pTeam.color}00`] } : {}}
-                                       transition={isTop ? { repeat: Infinity, duration: 2.5, ease: "easeInOut" } : {}}
-                                       className={`flex items-center justify-between p-4 rounded-xl transition-colors shadow-sm ${isTop ? 'bg-gradient-to-r from-white/10 to-white/5 border' : 'bg-white/5 border border-white/5 hover:bg-white/10'}`}
-                                       style={isTop ? { borderColor: `${pTeam.color}80` } : {}}
-                                     >
-                                       <div className="flex items-center gap-4">
-                                         <span className={`font-outfit font-black w-4 text-center text-lg ${isTop ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'text-zinc-600'}`}>{idx + 1}</span>
-                                         <div className="w-3 h-3 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]" style={{backgroundColor: pTeam.color, boxShadow: isTop ? `0 0 15px ${pTeam.color}` : undefined}} />
-                                         <div>
-                                            <span className={`font-black text-sm block uppercase tracking-wide ${isTop ? 'text-white' : 'text-zinc-200'}`}>{p.name}</span>
-                                            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: isTop ? pTeam.color : '#71717a' }}>{pTeam.name} • {p.position}</span>
-                                         </div>
-                                       </div>
-                                       <div className="flex flex-col items-end">
-                                          <span className={`font-outfit font-black text-3xl drop-shadow-md ${isTop ? 'text-white' : 'text-zinc-300'}`}>{p.stat}</span>
-                                          {board.title === 'Golden Glove' && (
-                                             <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest bg-black/50 px-2 py-0.5 rounded">{p.totalSaves} SV • {p.cleanSheets} CS</span>
-                                          )}
-                                       </div>
-                                     </motion.div>
-                                   )
-                                 })
-                               )}
-                             </div>
                            </div>
-                         ))}
-                       </div>
-                     )}
-                     
-                     {activeTab === 'standings_mobile' && (
-                        <div className="xl:hidden pb-10">
-                           <StandingsWidget standings={standings} />
-                        </div>
-                     )}
+                         </div>
+                       ))}
+                     </div>
+                   )}
+                   
+                   {}
+                   {activeTab === 'standings' && (
+                      <div className="pb-10 min-h-[500px]">
+                         <StandingsWidget standings={standings} />
+                      </div>
+                   )}
 
-                   </motion.div>
-                 </AnimatePresence>
-              </div>
-           </div>
+                 </motion.div>
+               </AnimatePresence>
+            </div>
+         </div>
+      </div>
+    </main>
 
-           <div className="hidden xl:block xl:col-span-1 h-full">
-              <div className="sticky top-28 h-[calc(100vh-140px)] z-20">
-                 <StandingsWidget standings={standings} />
-              </div>
-           </div>
-
-        </div>
-      </main>
-
-      <AnimatePresence>
-         {editingMatchId && (
-            <MatchDashboard 
-               matchId={editingMatchId} 
+    {/* Match Dashboard Modal Render */}
+    <AnimatePresence>
+       {editingMatchId && (
+          <MatchDashboard 
+             matchId={editingMatchId} 
                onClose={() => setEditingMatchId(null)} 
                matches={matches} 
                teams={teams} 
