@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trophy, Calendar, Users, Activity, Settings, Plus, Minus, 
-  Play, Pause, RotateCcw, AlertCircle, Clock, Check, X, Shield, ChevronRight
+  Play, Pause, RotateCcw, AlertCircle, Clock, Check, X, Shield, ChevronRight, Crown
 } from 'lucide-react';
 
 // ==========================================
@@ -73,7 +73,6 @@ const LiveTimerDisplay = ({ timer, match }) => {
       const s = (currentElapsed % 60).toString().padStart(2, '0');
       setDisplay(`${m}:${s}`);
 
-      // Clock turns red if elapsed time exceeds expected duration of the current half
       let overtime = false;
       if (timer.period === '1st Half' && currentElapsed >= targetSeconds) overtime = true;
       else if (timer.period === '2nd Half' && currentElapsed >= targetSeconds * 2) overtime = true;
@@ -124,7 +123,6 @@ const StandingsWidget = ({ standings }) => (
         <tbody className="divide-y divide-white/5">
           {standings.map((t, idx) => (
             <tr key={t.id} className={`hover:bg-white/[0.06] transition-all duration-300 group relative ${idx < 2 ? 'bg-emerald-500/[0.03]' : ''}`}>
-              {/* Fix 3: Moved absolute indicator inside the td to prevent layout shift */}
               <td className="p-4 font-outfit font-black text-zinc-500 text-lg w-12 text-center pl-6 relative">
                  {idx < 2 && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)]" />}
                  {idx + 1}
@@ -271,19 +269,24 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
     else if (match.timer.period === 'ET 2nd Half') {
        if (match.score1 === match.score2) {
           updateLiveMatch(m => {
-            m.status = 'completed'; m.timer.period = 'Pens'; m.timer.isRunning = false; m.shootout = { t1: [{player:'', res:null}, {player:'', res:null}, {player:'', res:null}], t2: [{player:'', res:null}, {player:'', res:null}, {player:'', res:null}], tossWinner: null };
+            // Fix: Maintain LIVE state for Shootout period so progression controls stay visible
+            m.timer.period = 'Pens'; m.timer.isRunning = false; 
+            m.shootout = { t1: [{player:'', res:null}], t2: [{player:'', res:null}], winner: null };
             if (m.timer.lastStartTime) { m.timer.baseElapsed += Math.floor((Date.now() - m.timer.lastStartTime) / 1000); }
             m.timer.lastStartTime = null;
             return m;
           });
        } else {
           updateLiveMatch(m => {
-            m.status = 'completed'; m.timer.period = 'FT'; m.timer.isRunning = false;
+            m.status = 'completed'; m.timer.period = 'FT ET'; m.timer.isRunning = false;
             if (m.timer.lastStartTime) { m.timer.baseElapsed += Math.floor((Date.now() - m.timer.lastStartTime) / 1000); }
             m.timer.lastStartTime = null;
             return m;
           });
        }
+    }
+    else if (match.timer.period === 'Pens') {
+       setDialogState('CONFIRM_SHOOTOUT_WINNER');
     }
   };
 
@@ -369,12 +372,38 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
                           }} className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-widest transition-colors border border-white/10">Extra Time</button>
                           <button onClick={() => {
                              updateLiveMatch(m => {
-                                m.status = 'completed'; m.timer.period = 'Pens'; m.timer.isRunning = false; 
-                                m.shootout = { t1: [{player:'', res:null}, {player:'', res:null}, {player:'', res:null}], t2: [{player:'', res:null}, {player:'', res:null}, {player:'', res:null}], tossWinner: null };
+                                m.timer.period = 'Pens'; m.timer.isRunning = false; 
+                                m.shootout = { t1: [{player:'', res:null}], t2: [{player:'', res:null}], winner: null };
                                 return m;
                              });
                              setDialogState(null);
                           }} className="w-full py-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 font-bold text-xs uppercase tracking-widest transition-colors border border-rose-500/20">Penalties</button>
+                       </div>
+                    </>
+                 )}
+                 {dialogState === 'CONFIRM_SHOOTOUT_WINNER' && (
+                    <>
+                       <Crown size={40} className="text-amber-500 mb-4" />
+                       <h3 className="text-white font-bold text-lg mb-2">Confirm Shootout Winner</h3>
+                       <p className="text-zinc-400 text-sm mb-6">Select the team that won the penalty shootout. This will conclude the match.</p>
+                       <div className="flex flex-col gap-3 w-full">
+                          <button onClick={() => {
+                             updateLiveMatch(m => {
+                                m.shootout.winner = t1.id;
+                                m.status = 'completed'; m.timer.period = 'FT Pen'; m.timer.isRunning = false;
+                                return m;
+                             });
+                             setDialogState(null);
+                          }} className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-widest transition-colors border border-white/10 truncate px-4">{t1.name}</button>
+                          <button onClick={() => {
+                             updateLiveMatch(m => {
+                                m.shootout.winner = t2.id;
+                                m.status = 'completed'; m.timer.period = 'FT Pen'; m.timer.isRunning = false;
+                                return m;
+                             });
+                             setDialogState(null);
+                          }} className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-widest transition-colors border border-white/10 truncate px-4">{t2.name}</button>
+                          <button onClick={() => setDialogState(null)} className="w-full mt-2 py-3 rounded-xl bg-transparent text-zinc-500 font-bold text-xs uppercase tracking-widest transition-colors hover:text-white">Cancel</button>
                        </div>
                     </>
                  )}
@@ -486,7 +515,6 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
 
             <div className="relative z-10">
                {!isAdmin ? (
-                  // VIEWER VIEW: Show Match Timeline / Important Moments with Glowing Snake
                   <div>
                     <h4 className="text-center text-xs font-black text-zinc-500 uppercase tracking-[0.2em] mb-6 sm:mb-8">Match Timeline</h4>
                     <div className="bg-white/[0.02] backdrop-blur-md rounded-3xl border border-white/5 p-4 sm:p-8 relative">
@@ -494,7 +522,6 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
                          <p className="text-zinc-600 text-center text-xs font-bold uppercase tracking-widest py-8">No significant events yet.</p>
                        ) : (
                          <div className="flex flex-col gap-2 relative before:absolute before:inset-y-0 before:w-1 before:bg-white/5 before:left-1/2 before:-translate-x-1/2 before:rounded-full py-4">
-                           {/* Glowing Snake Line */}
                            <div className="absolute top-0 w-1 bg-gradient-to-b from-emerald-400 to-emerald-600 left-1/2 -translate-x-1/2 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.8)] transition-all duration-1000 ease-in-out z-0" style={{height: `${Math.min((getCurrentMatchMinute() / ((match.halfDuration || 15) * 2)) * 100, 100)}%`}}>
                               {match.status === 'live' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_20px_rgba(16,185,129,1)] animate-pulse" />}
                            </div>
@@ -521,7 +548,6 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
                     </div>
                   </div>
                ) : (
-                  // ADMIN VIEW: Show Full Rosters with Event Controls
                   <>
                      <div className="flex justify-between items-center mb-6">
                         <h4 className="text-xs font-black text-zinc-500 uppercase tracking-[0.2em]">Match Rosters (Admin)</h4>
@@ -622,7 +648,7 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
                                  return (
                                     <div key={i} className="flex items-center gap-3 w-full bg-black/50 p-2 rounded-xl border border-white/10 shadow-inner">
                                        <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest w-6 text-center shrink-0">{i+1}</span>
-                                       {isAdmin ? (
+                                       {isAdmin && match.status !== 'completed' ? (
                                           <select
                                              value={playerId}
                                              onChange={e => updateLiveMatch(m => { m.shootout[teamObj.key][i].player = e.target.value; return m; })}
@@ -637,25 +663,25 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
 
                                        <div className="flex items-center gap-1 shrink-0 bg-zinc-900 rounded-lg p-1 border border-white/10">
                                           <button 
-                                             onClick={() => isAdmin && updateLiveMatch(m => { m.shootout[teamObj.key][i].res = 'goal'; return m; })} 
-                                             className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${res === 'goal' ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.6)]' : 'bg-transparent text-zinc-600 hover:text-white hover:bg-white/5'} ${!isAdmin && 'pointer-events-none'}`}
+                                             onClick={() => isAdmin && match.status !== 'completed' && updateLiveMatch(m => { m.shootout[teamObj.key][i].res = 'goal'; return m; })} 
+                                             className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${res === 'goal' ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.6)]' : 'bg-transparent text-zinc-600 hover:text-white hover:bg-white/5'} ${(!isAdmin || match.status === 'completed') && 'pointer-events-none'}`}
                                           >⚽</button>
                                           <button 
-                                             onClick={() => isAdmin && updateLiveMatch(m => { m.shootout[teamObj.key][i].res = 'save'; return m; })} 
-                                             className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${res === 'save' ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)]' : 'bg-transparent text-zinc-600 hover:text-white hover:bg-white/5'} ${!isAdmin && 'pointer-events-none'}`}
+                                             onClick={() => isAdmin && match.status !== 'completed' && updateLiveMatch(m => { m.shootout[teamObj.key][i].res = 'save'; return m; })} 
+                                             className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${res === 'save' ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)]' : 'bg-transparent text-zinc-600 hover:text-white hover:bg-white/5'} ${(!isAdmin || match.status === 'completed') && 'pointer-events-none'}`}
                                           >🧤</button>
                                           <button 
-                                             onClick={() => isAdmin && updateLiveMatch(m => { m.shootout[teamObj.key][i].res = 'miss'; return m; })} 
-                                             className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${res === 'miss' ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)]' : 'bg-transparent text-zinc-600 hover:text-white hover:bg-white/5'} ${!isAdmin && 'pointer-events-none'}`}
+                                             onClick={() => isAdmin && match.status !== 'completed' && updateLiveMatch(m => { m.shootout[teamObj.key][i].res = 'miss'; return m; })} 
+                                             className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${res === 'miss' ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)]' : 'bg-transparent text-zinc-600 hover:text-white hover:bg-white/5'} ${(!isAdmin || match.status === 'completed') && 'pointer-events-none'}`}
                                           ><X size={16}/></button>
-                                          {isAdmin && res !== null && (
+                                          {isAdmin && match.status !== 'completed' && res !== null && (
                                              <button onClick={() => updateLiveMatch(m => { m.shootout[teamObj.key][i].res = null; return m; })} className="w-6 h-8 text-zinc-500 hover:text-rose-500 flex items-center justify-center"><RotateCcw size={12}/></button>
                                           )}
                                        </div>
                                     </div>
                                  )
                               })}
-                              {isAdmin && (
+                              {isAdmin && match.status !== 'completed' && (
                                  <button onClick={() => updateLiveMatch(m => { m.shootout[teamObj.key].push({player:'', res:null}); return m; })} className="mt-2 w-full py-3 rounded-xl border border-dashed border-white/20 text-zinc-500 flex items-center justify-center hover:border-white/40 hover:text-white transition-colors font-bold text-xs uppercase tracking-widest gap-2">
                                     <Plus size={14} /> Add Kicker
                                  </button>
@@ -665,20 +691,17 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
                      ))}
                   </div>
 
-                  {isAdmin && (
-                     <div className="flex flex-col items-center justify-center gap-4 mt-12 p-6 bg-zinc-900/80 rounded-2xl border border-white/10 max-w-lg mx-auto relative z-10 shadow-inner">
-                        <span className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">Sudden Death / Coin Toss Winner</span>
-                        <div className="flex gap-4 w-full">
-                           <button onClick={()=>updateLiveMatch(m=>{m.shootout.tossWinner = m.shootout.tossWinner === t1.id ? null : t1.id; return m;})} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${match.shootout.tossWinner === t1.id ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.5)] scale-105' : 'bg-black border border-white/20 text-zinc-400 hover:bg-white/5'}`}>{t1.name}</button>
-                           <button onClick={()=>updateLiveMatch(m=>{m.shootout.tossWinner = m.shootout.tossWinner === t2.id ? null : t2.id; return m;})} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${match.shootout.tossWinner === t2.id ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.5)] scale-105' : 'bg-black border border-white/20 text-zinc-400 hover:bg-white/5'}`}>{t2.name}</button>
-                        </div>
+                  {isAdmin && match.timer.period === 'Pens' && match.status !== 'completed' && (
+                     <div className="mt-12 p-6 bg-zinc-900/80 rounded-2xl border border-white/10 max-w-lg mx-auto relative z-10 shadow-inner text-center">
+                        <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest mb-4">When shootout is finished, click "End Shootout" at the top to declare the winner.</p>
                      </div>
                   )}
-                  {match.shootout.tossWinner && !isAdmin && (
-                     <div className="mt-12 p-8 bg-gradient-to-br from-zinc-900 to-black border border-white/20 text-white text-center rounded-2xl max-w-lg mx-auto shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative z-10">
+
+                  {match.shootout.winner && (
+                     <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} className="mt-12 p-8 bg-gradient-to-br from-zinc-900 to-black border border-white/20 text-white text-center rounded-2xl max-w-lg mx-auto shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative z-10">
                         <span className="font-black uppercase tracking-[0.3em] text-[10px] bg-white/10 px-4 py-2 rounded-full text-zinc-300 border border-white/20 shadow-sm">Shootout Winner</span>
-                        <h3 className="font-outfit font-black text-4xl mt-6 uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 drop-shadow-sm">{getTeam(match.shootout.tossWinner).name}</h3>
-                     </div>
+                        <h3 className="font-outfit font-black text-4xl mt-6 uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 drop-shadow-sm">{getTeam(match.shootout.winner).name}</h3>
+                     </motion.div>
                   )}
                </div>
             )}
@@ -772,6 +795,11 @@ export default function App() {
 
   const getTeam = (id) => teams.find(t => t.id === id) || { name: 'TBD', color: '#cbd5e1' };
 
+  const shortName = (name) => {
+     if (name.length <= 15) return name;
+     return name.substring(0, 12) + '...';
+  };
+
   const calculateStandings = () => {
     let table = teams.map(t => ({ id: t.id, name: t.name, color: t.color, p:0, w:0, d:0, l:0, gf:0, ga:0, gd:0, pts:0 }));
     
@@ -798,24 +826,59 @@ export default function App() {
 
   useEffect(() => {
     const groupMatchesCompleted = matches.filter(m => m.stage === 'group' && m.status === 'completed').length === 6;
-    if (groupMatchesCompleted) {
-       let changed = false;
-       const newMatches = matches.map(m => {
-         if (m.id === 'sf1' && m.status === 'upcoming' && !m.team1) {
-           changed = true; return { ...m, team1: standings[1]?.id || null, team2: standings[2]?.id || null };
-         }
-         if (m.id === 'f1' && m.status === 'upcoming' && !m.team1) {
-           const sf = matches.find(x => x.id === 'sf1');
-           if (sf && sf.status === 'completed') {
-             changed = true;
-             const sfWinner = sf.score1 > sf.score2 ? sf.team1 : (sf.score2 > sf.score1 ? sf.team2 : (sf.shootout?.tossWinner || sf.team1));
-             return { ...m, team1: standings[0]?.id || null, team2: sfWinner || null };
-           }
-         }
-         return m;
-       });
-       if (changed) syncToDB(null, newMatches, null);
-    }
+    let changed = false;
+    
+    const newMatches = matches.map(m => {
+       let updatedMatch = { ...m };
+       
+       if (m.id === 'sf1') {
+          if (groupMatchesCompleted) {
+             if (m.status === 'upcoming') {
+                if (m.team1 !== standings[1]?.id || m.team2 !== standings[2]?.id) {
+                   updatedMatch = { ...updatedMatch, team1: standings[1]?.id || null, team2: standings[2]?.id || null };
+                   changed = true;
+                }
+             }
+          } else {
+             // Cascade reset: Group stage incomplete, clear SF1
+             if (m.team1 !== null || m.team2 !== null) {
+                updatedMatch = { ...updatedMatch, team1: null, team2: null };
+                changed = true;
+             }
+          }
+       }
+       
+       if (m.id === 'f1') {
+          if (groupMatchesCompleted) {
+             const sf = matches.find(x => x.id === 'sf1');
+             if (sf && sf.status === 'completed') {
+                const sfWinner = sf.shootout?.winner ? sf.shootout.winner : (sf.score1 > sf.score2 ? sf.team1 : (sf.score2 > sf.score1 ? sf.team2 : sf.team1));
+                if (m.status === 'upcoming') {
+                   if (m.team1 !== standings[0]?.id || m.team2 !== sfWinner) {
+                      updatedMatch = { ...updatedMatch, team1: standings[0]?.id || null, team2: sfWinner || null };
+                      changed = true;
+                   }
+                }
+             } else {
+                // Cascade reset: SF1 incomplete, clear F1 team2 and set team1 to leader
+                if (m.team2 !== null || m.team1 !== standings[0]?.id) {
+                   updatedMatch = { ...updatedMatch, team1: standings[0]?.id || null, team2: null };
+                   changed = true;
+                }
+             }
+          } else {
+             // Cascade reset: Group stage incomplete, clear F1 entirely
+             if (m.team1 !== null || m.team2 !== null) {
+                updatedMatch = { ...updatedMatch, team1: null, team2: null };
+                changed = true;
+             }
+          }
+       }
+       
+       return updatedMatch;
+    });
+
+    if (changed) syncToDB(null, newMatches, null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matches]);
 
@@ -830,7 +893,7 @@ export default function App() {
   let tournamentRunnerUp = null;
   
   if (isTournamentOver) {
-     tournamentWinner = finalMatch.score1 > finalMatch.score2 ? finalMatch.team1 : (finalMatch.score2 > finalMatch.score1 ? finalMatch.team2 : (finalMatch.shootout?.tossWinner || finalMatch.team1));
+     tournamentWinner = finalMatch.shootout?.winner ? finalMatch.shootout.winner : (finalMatch.score1 > finalMatch.score2 ? finalMatch.team1 : (finalMatch.score2 > finalMatch.score1 ? finalMatch.team2 : finalMatch.team1));
      tournamentRunnerUp = tournamentWinner === finalMatch.team1 ? finalMatch.team2 : finalMatch.team1;
   }
 
@@ -843,7 +906,6 @@ export default function App() {
         .font-outfit { font-family: 'Outfit', sans-serif; }
         body { margin: 0; padding: 0; overflow-x: hidden; background-color: #050505; }
         
-        /* Aggressive Diagonal & Grid Backgrounds */
         .bg-grid {
           background-image: 
             linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
@@ -859,23 +921,21 @@ export default function App() {
         .glass-panel {
           background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
           backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
           border: 1px solid rgba(255,255,255,0.1);
         }
       `}} />
 
-      {/* Cinematic Football Background */}
       <div 
         className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat opacity-[0.15] mix-blend-luminosity"
         style={{ backgroundImage: "url('https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=2000&q=80')" }} 
       />
       <div className="fixed inset-0 z-0 pointer-events-none bg-gradient-to-b from-[#050505]/70 via-[#050505]/90 to-[#050505] backdrop-blur-[2px]" />
 
-      {/* Complex Background Overlays */}
       <div className="fixed inset-0 bg-grid opacity-30 pointer-events-none mix-blend-overlay z-0" />
       <div className="fixed top-[-30%] left-[-20%] w-[70%] h-[70%] bg-rose-600/10 rounded-full blur-[150px] pointer-events-none" />
       <div className="fixed bottom-[-30%] right-[-20%] w-[70%] h-[70%] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none" />
       
-      {/* Decorative large diagonal slash in background */}
       <div className="fixed top-0 bottom-0 left-[20%] w-[1px] bg-gradient-to-b from-transparent via-white/10 to-transparent skew-x-[-20deg] pointer-events-none z-0"></div>
       <div className="fixed top-0 bottom-0 right-[30%] w-[1px] bg-gradient-to-b from-transparent via-white/10 to-transparent skew-x-[-20deg] pointer-events-none z-0"></div>
 
@@ -952,7 +1012,7 @@ export default function App() {
               </div>
            </div>
         ) : heroMatch ? (
-           <div className="w-full relative rounded-[2.5rem] md:rounded-[3rem] overflow-hidden bg-zinc-950 border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] mb-12 flex flex-row min-h-[220px] md:min-h-[350px] group">
+           <div className="w-full relative rounded-[2.5rem] md:rounded-[3rem] overflow-hidden bg-zinc-950 border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] mb-12 flex flex-row min-h-[180px] md:min-h-[350px] group">
               <div 
                 className="absolute inset-0 bg-cover bg-center opacity-50 transition-transform duration-1000 group-hover:scale-105 z-0" 
                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=2000&q=80')" }}
@@ -965,7 +1025,7 @@ export default function App() {
 
               <div className="hidden md:block absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[200px] bg-black/70 backdrop-blur-xl border-l border-r border-white/10 skew-x-[-20deg] z-10 shadow-2xl"></div>
 
-              {/* Center Time Box */}
+              {/* Force Horizontal Layout for Hero Live Match Fix */}
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center">
                  <div className="glass-panel p-2 md:p-5 rounded-2xl md:rounded-[2.5rem] flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden backdrop-blur-3xl border border-white/20 skew-x-[-10deg]">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
@@ -988,13 +1048,12 @@ export default function App() {
                  </div>
               </div>
 
-              {/* Left Team */}
               <div className="flex-1 w-1/2 p-4 pr-16 md:p-14 md:pr-14 flex flex-col justify-center items-start text-left relative z-20 md:diagonal-slash overflow-hidden">
                  <div className="absolute inset-0 pointer-events-none transition-opacity duration-700 opacity-70 group-hover:opacity-100" style={{background: `radial-gradient(circle at 0% 50%, ${getTeam(heroMatch.team1).color}40 0%, transparent 70%)`}}></div>
                  <div className="relative z-10 flex flex-col items-start h-full justify-center w-full">
                     <div className="w-6 md:w-16 h-1 md:h-2 rounded-full mb-2 md:mb-8 transition-transform duration-500 group-hover:scale-110 group-hover:translate-x-2 shadow-lg" style={{backgroundColor: getTeam(heroMatch.team1).color, boxShadow: `0 0 30px ${getTeam(heroMatch.team1).color}`}} />
                     
-                    <h2 className="text-sm sm:text-4xl lg:text-7xl font-outfit font-black uppercase tracking-tighter text-white leading-[0.9] mb-1 md:mb-4 line-clamp-4 md:line-clamp-2 md:max-h-[2em] overflow-hidden drop-shadow-2xl">
+                    <h2 className="text-sm sm:text-4xl lg:text-7xl font-outfit font-black uppercase tracking-tighter text-white leading-[0.9] mb-1 md:mb-4 line-clamp-4 md:line-clamp-2 overflow-hidden drop-shadow-2xl">
                        {getTeam(heroMatch.team1).name}
                     </h2>
                     
@@ -1006,13 +1065,12 @@ export default function App() {
                  </div>
               </div>
 
-              {/* Right Team */}
               <div className="flex-1 w-1/2 p-4 pl-16 md:p-14 md:pl-14 flex flex-col justify-center items-end text-right relative z-20 md:diagonal-slash-reverse overflow-hidden bg-black/20">
                  <div className="absolute inset-0 pointer-events-none transition-opacity duration-700 opacity-70 group-hover:opacity-100" style={{background: `radial-gradient(circle at 100% 50%, ${getTeam(heroMatch.team2).color}40 0%, transparent 70%)`}}></div>
                  <div className="relative z-10 flex flex-col items-end h-full justify-center w-full">
                     <div className="w-6 md:w-16 h-1 md:h-2 rounded-full mb-2 md:mb-8 transition-transform duration-500 group-hover:scale-110 group-hover:-translate-x-2 shadow-lg" style={{backgroundColor: getTeam(heroMatch.team2).color, boxShadow: `0 0 30px ${getTeam(heroMatch.team2).color}`}} />
                     
-                    <h2 className="text-sm sm:text-4xl lg:text-7xl font-outfit font-black uppercase tracking-tighter text-white leading-[0.9] mb-1 md:mb-4 line-clamp-4 md:line-clamp-2 md:max-h-[2em] overflow-hidden drop-shadow-2xl">
+                    <h2 className="text-sm sm:text-4xl lg:text-7xl font-outfit font-black uppercase tracking-tighter text-white leading-[0.9] mb-1 md:mb-4 line-clamp-4 md:line-clamp-2 overflow-hidden drop-shadow-2xl">
                        {getTeam(heroMatch.team2).name}
                     </h2>
                     
@@ -1095,7 +1153,10 @@ export default function App() {
                                    const mt2Color = mt2?.color || '#333333';
                                    
                                    return (
-                                     <div 
+                                     <motion.div 
+                                       layoutId={`match-card-${m.id}`}
+                                       initial={{ opacity: 0, scale: 0.95 }}
+                                       animate={{ opacity: 1, scale: 1 }}
                                        key={m.id} 
                                        onClick={() => isInteractive && setEditingMatchId(m.id)}
                                        className={`backdrop-blur-xl rounded-3xl border border-white/5 p-5 md:p-8 transition-all group relative overflow-hidden shadow-lg flex flex-col
@@ -1107,10 +1168,18 @@ export default function App() {
                                             : `linear-gradient(135deg, ${mt1Color}15 0%, rgba(9, 9, 11, 0.8) 50%, ${mt2Color}15 100%)`
                                        }}
                                      >
-                                       {/* Header containing Stage, Time and Live Indicator */}
+                                       {/* Semi / Final Specific Decorative Animations */}
+                                       {stage === 'final' && (
+                                         <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/10 to-amber-500/0 animate-pulse pointer-events-none rounded-3xl z-0" />
+                                       )}
+                                       {stage === 'semi' && (
+                                         <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none rounded-3xl z-0" />
+                                       )}
+
+                                       {/* Ensure Vertical layout with top-right timer fix */}
                                        <div className="flex justify-between items-start mb-6 relative z-10 w-full">
                                           <div className="flex flex-col">
-                                             <span className="text-[10px] font-black text-zinc-500 tracking-[0.2em] uppercase">
+                                             <span className={`text-[10px] font-black tracking-[0.2em] uppercase ${stage === 'final' ? 'text-amber-500 drop-shadow-md' : 'text-zinc-500'}`}>
                                                 {stage === 'group' ? 'Group' : stage === 'semi' ? 'Semi' : 'Final'}
                                              </span>
                                           </div>
@@ -1149,25 +1218,24 @@ export default function App() {
                                           </div>
                                        </div>
 
-                                       {/* Body stacking Team 1 and Team 2 */}
                                        <div className="flex flex-col space-y-4 md:space-y-5 relative z-10 w-full mt-auto">
                                          <div className="flex items-center justify-between w-full gap-4">
                                            <div className="flex items-center gap-3 min-w-0 flex-1">
                                              <div className="w-3 h-3 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.3)] border border-white/20" style={{backgroundColor: mt1Color, boxShadow: `0 0 15px ${mt1Color}`}} />
-                                             <span className={`font-outfit font-black uppercase tracking-tight truncate block text-xl ${isMatchLive ? 'text-white' : 'text-zinc-200'}`}>{mt1.name}</span>
+                                             <span className={`font-outfit font-black uppercase tracking-tight truncate block text-xl ${isMatchLive || stage === 'final' ? 'text-white' : 'text-zinc-200'}`}>{mt1.name}</span>
                                            </div>
-                                           <span className={`font-outfit font-black tabular-nums shrink-0 text-3xl md:text-4xl ${isMatchLive ? 'text-white drop-shadow-md' : 'text-zinc-500'}`}>{m.score1}</span>
+                                           <span className={`font-outfit font-black tabular-nums shrink-0 text-3xl md:text-4xl ${isMatchLive || stage === 'final' ? 'text-white drop-shadow-md' : 'text-zinc-500'}`}>{m.score1}</span>
                                          </div>
                                          
                                          <div className="flex items-center justify-between w-full gap-4">
                                            <div className="flex items-center gap-3 min-w-0 flex-1">
                                              <div className="w-3 h-3 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.3)] border border-white/20" style={{backgroundColor: mt2Color, boxShadow: `0 0 15px ${mt2Color}`}} />
-                                             <span className={`font-outfit font-black uppercase tracking-tight truncate block text-xl ${isMatchLive ? 'text-white' : 'text-zinc-200'}`}>{mt2.name}</span>
+                                             <span className={`font-outfit font-black uppercase tracking-tight truncate block text-xl ${isMatchLive || stage === 'final' ? 'text-white' : 'text-zinc-200'}`}>{mt2.name}</span>
                                            </div>
-                                           <span className={`font-outfit font-black tabular-nums shrink-0 text-3xl md:text-4xl ${isMatchLive ? 'text-white drop-shadow-md' : 'text-zinc-500'}`}>{m.score2}</span>
+                                           <span className={`font-outfit font-black tabular-nums shrink-0 text-3xl md:text-4xl ${isMatchLive || stage === 'final' ? 'text-white drop-shadow-md' : 'text-zinc-500'}`}>{m.score2}</span>
                                          </div>
                                        </div>
-                                     </div>
+                                     </motion.div>
                                    )
                                  })}
                                </div>
@@ -1234,7 +1302,6 @@ export default function App() {
                                   </div>
                                )}
 
-                               {/* Clean 2D Pitch Visualization */}
                                <div className="relative w-full aspect-[4/5] md:aspect-[3/4] bg-zinc-950 border-2 border-white/10 rounded-2xl mb-6 overflow-hidden flex flex-col justify-evenly py-4">
                                   <div className="absolute inset-0 opacity-10 pointer-events-none flex flex-col justify-between items-center py-4">
                                      <div className="absolute top-1/2 left-0 w-full h-px bg-white"></div>
@@ -1423,7 +1490,6 @@ export default function App() {
         </div>
       </main>
 
-      {/* Match Dashboard Modal Render */}
       <AnimatePresence>
          {editingMatchId && (
             <MatchDashboard 
