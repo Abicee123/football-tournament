@@ -124,9 +124,11 @@ const StandingsWidget = ({ standings }) => (
         <tbody className="divide-y divide-white/5">
           {standings.map((t, idx) => (
             <tr key={t.id} className={`hover:bg-white/[0.06] transition-all duration-300 group relative ${idx < 2 ? 'bg-emerald-500/[0.03]' : ''}`}>
-              {idx < 2 && <td className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)]" />}
-              
-              <td className="p-4 font-outfit font-black text-zinc-500 text-lg w-12 text-center pl-6">{idx + 1}</td>
+              {/* Fix 3: Moved absolute indicator inside the td to prevent layout shift */}
+              <td className="p-4 font-outfit font-black text-zinc-500 text-lg w-12 text-center pl-6 relative">
+                 {idx < 2 && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)]" />}
+                 {idx + 1}
+              </td>
               <td className="p-4 py-5">
                 <div className="flex items-center gap-4">
                   <div className="w-3 h-3 rounded-full shadow-[0_0_12px_rgba(255,255,255,0.4)] group-hover:scale-125 transition-transform" style={{backgroundColor: t.color, boxShadow: `0 0 15px ${t.color}`}} />
@@ -857,7 +859,6 @@ export default function App() {
         .glass-panel {
           background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
           backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
           border: 1px solid rgba(255,255,255,0.1);
         }
       `}} />
@@ -928,7 +929,6 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1 flex flex-col relative z-10">
         
-        {}
         {isTournamentOver ? (
            <div className="w-full relative glass-panel rounded-[3rem] p-12 md:p-24 mb-12 flex flex-col items-center justify-center text-center overflow-hidden shadow-2xl group">
               <div 
@@ -952,78 +952,91 @@ export default function App() {
               </div>
            </div>
         ) : heroMatch ? (
-           <div className="w-full relative rounded-[2.5rem] md:rounded-[3rem] overflow-hidden bg-zinc-950 border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] mb-12 flex flex-col md:flex-row min-h-[350px] md:min-h-[450px] group">
+           // FIX 1: Redesigned Hero Match layout for mobile responsiveness
+           <div className="w-full relative rounded-[2.5rem] md:rounded-[3rem] overflow-hidden bg-zinc-950 border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] mb-12 flex flex-col min-h-[500px] md:min-h-[450px] group">
               <div 
                 className="absolute inset-0 bg-cover bg-center opacity-50 transition-transform duration-1000 group-hover:scale-105 z-0" 
                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=2000&q=80')" }}
               ></div>
               <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-black z-0"></div>
-              <div className="absolute inset-0 opacity-80 z-0 mix-blend-color" style={{ background: `linear-gradient(to right, ${getTeam(heroMatch.team1).color}, transparent 40%, transparent 60%, ${getTeam(heroMatch.team2).color})` }}></div>
-              <div className="absolute inset-0 opacity-70 z-0" style={{ background: `linear-gradient(to right, ${getTeam(heroMatch.team1).color}30, transparent 40%, transparent 60%, ${getTeam(heroMatch.team2).color}30)` }}></div>
+              <div className="absolute inset-0 opacity-80 z-0 mix-blend-color flex flex-col md:flex-row">
+                 <div className="flex-1" style={{ background: `linear-gradient(to right, ${getTeam(heroMatch.team1).color}, transparent 80%)` }} />
+                 <div className="flex-1" style={{ background: `linear-gradient(to left, ${getTeam(heroMatch.team2).color}, transparent 80%)` }} />
+              </div>
+              <div className="absolute inset-0 opacity-70 z-0 flex flex-col md:flex-row">
+                 <div className="flex-1" style={{ background: `linear-gradient(to right, ${getTeam(heroMatch.team1).color}30, transparent 80%)` }} />
+                 <div className="flex-1" style={{ background: `linear-gradient(to left, ${getTeam(heroMatch.team2).color}30, transparent 80%)` }} />
+              </div>
               <div className="absolute inset-0 bg-grid opacity-30 z-0 mix-blend-overlay"></div>
               <div className="absolute inset-0 opacity-50 z-0" style={{background: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 20px)'}}></div>
 
               <div className="hidden md:block absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[200px] bg-black/70 backdrop-blur-xl border-l border-r border-white/10 skew-x-[-20deg] z-10 shadow-2xl"></div>
 
-              <div className="flex-1 p-8 md:p-14 flex flex-col justify-center relative z-20 md:diagonal-slash overflow-hidden">
-                 <div className="absolute inset-0 pointer-events-none transition-opacity duration-700 opacity-70 group-hover:opacity-100" style={{background: `radial-gradient(circle at 0% 50%, ${getTeam(heroMatch.team1).color}40 0%, transparent 70%)`}}></div>
-                 <div className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left h-full justify-center w-full md:w-[90%]">
-                    <div className="w-16 h-2 rounded-full mb-6 md:mb-8 transition-transform duration-500 group-hover:scale-110 group-hover:translate-x-2 shadow-lg" style={{backgroundColor: getTeam(heroMatch.team1).color, boxShadow: `0 0 30px ${getTeam(heroMatch.team1).color}`}} />
-                    
-                    <h2 className="text-5xl sm:text-6xl lg:text-7xl font-outfit font-black uppercase tracking-tighter text-white leading-[0.9] mb-4 line-clamp-2 max-h-[2.2em] md:max-h-[2em] overflow-hidden drop-shadow-2xl">
-                       {getTeam(heroMatch.team1).name}
-                    </h2>
-                    
-                    {isLive && (
-                       <motion.div key={heroMatch.score1} initial={{scale:1.2, opacity:0, x:-20}} animate={{scale:1, opacity:1, x:0}} className="text-8xl sm:text-9xl lg:text-[11rem] font-black font-outfit tabular-nums tracking-tighter mt-4 md:mt-auto leading-none drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]" style={{color: getTeam(heroMatch.team1).color}}>
-                          {heroMatch.score1}
-                       </motion.div>
-                    )}
-                 </div>
-              </div>
-
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center">
-                 <div className="glass-panel p-4 md:p-5 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden backdrop-blur-3xl border border-white/20 skew-x-[-10deg]">
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
-                    <div className="skew-x-[10deg] flex flex-col items-center">
-                       <div className={`px-5 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-[0.3em] mb-3 relative z-10 ${isLive ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse shadow-[0_0_20px_rgba(244,63,94,0.4)]' : 'bg-white/10 text-zinc-300 border border-white/20'}`}>
-                          {isLive ? 'LIVE NOW' : 'NEXT MATCH'}
-                       </div>
-                       {isLive ? (
-                          <div className="text-4xl md:text-5xl font-outfit font-black text-white px-4 md:px-6 flex items-center justify-center relative z-10 whitespace-nowrap drop-shadow-md tracking-tighter">
-                             <LiveTimerDisplay timer={heroMatch.timer} match={heroMatch} />
-                             {heroMatch.timer.stoppage > 0 && <span className="text-rose-500 ml-2">+{heroMatch.timer.stoppage}</span>}
-                          </div>
-                       ) : (
-                          <div className="text-3xl md:text-4xl font-outfit font-black text-white px-4 md:px-6 flex items-center justify-center relative z-10 whitespace-nowrap drop-shadow-md tracking-tighter">
-                             {new Date(heroMatch.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
-                          </div>
+              <div className="flex flex-col md:flex-row flex-1 relative z-20">
+                 {/* Team 1 Section - Aligned to top on mobile to avoid center timer */}
+                 <div className="flex-1 p-6 md:p-14 pb-24 md:pb-14 flex flex-col justify-start md:justify-center items-center md:items-start text-center md:text-left relative md:diagonal-slash overflow-hidden">
+                    <div className="absolute inset-0 pointer-events-none transition-opacity duration-700 opacity-70 group-hover:opacity-100" style={{background: `radial-gradient(circle at 0% 0%, ${getTeam(heroMatch.team1).color}40 0%, transparent 70%)`}}></div>
+                    <div className="relative z-10 w-full flex flex-col items-center md:items-start">
+                       <div className="w-16 h-2 rounded-full mb-6 md:mb-8 transition-transform duration-500 group-hover:scale-110 group-hover:translate-x-2 shadow-lg" style={{backgroundColor: getTeam(heroMatch.team1).color, boxShadow: `0 0 30px ${getTeam(heroMatch.team1).color}`}} />
+                       
+                       <h2 className="text-4xl sm:text-6xl lg:text-7xl font-outfit font-black uppercase tracking-tighter text-white leading-[0.9] mb-2 md:mb-4 line-clamp-2 md:max-h-[2em] overflow-hidden drop-shadow-2xl">
+                          {getTeam(heroMatch.team1).name}
+                       </h2>
+                       
+                       {isLive && (
+                          <motion.div key={heroMatch.score1} initial={{scale:1.2, opacity:0, x:-20}} animate={{scale:1, opacity:1, x:0}} className="text-7xl sm:text-9xl lg:text-[11rem] font-black font-outfit tabular-nums tracking-tighter leading-none drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]" style={{color: getTeam(heroMatch.team1).color}}>
+                             {heroMatch.score1}
+                          </motion.div>
                        )}
-                       <div className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mt-3 relative z-10 bg-black/60 px-4 py-1.5 rounded-md border border-white/5">{isLive ? heroMatch.timer.period : 'KICKOFF'}</div>
+                    </div>
+                 </div>
+
+                 {/* Team 2 Section - Aligned to bottom on mobile to avoid center timer */}
+                 <div className="flex-1 p-6 md:p-14 pt-24 md:pt-14 flex flex-col justify-end md:justify-center items-center md:items-end text-center md:text-right relative md:diagonal-slash-reverse overflow-hidden bg-black/20">
+                    <div className="absolute inset-0 pointer-events-none transition-opacity duration-700 opacity-70 group-hover:opacity-100" style={{background: `radial-gradient(circle at 100% 100%, ${getTeam(heroMatch.team2).color}40 0%, transparent 70%)`}}></div>
+                    <div className="relative z-10 w-full flex flex-col items-center md:items-end">
+                       <div className="hidden md:block w-16 h-2 rounded-full mb-6 md:mb-8 transition-transform duration-500 group-hover:scale-110 group-hover:-translate-x-2 shadow-lg" style={{backgroundColor: getTeam(heroMatch.team2).color, boxShadow: `0 0 30px ${getTeam(heroMatch.team2).color}`}} />
+                       
+                       {isLive && (
+                          <motion.div key={heroMatch.score2} initial={{scale:1.2, opacity:0, x:20}} animate={{scale:1, opacity:1, x:0}} className="text-7xl sm:text-9xl lg:text-[11rem] font-black font-outfit tabular-nums tracking-tighter leading-none drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]" style={{color: getTeam(heroMatch.team2).color}}>
+                             {heroMatch.score2}
+                          </motion.div>
+                       )}
+
+                       <h2 className="text-4xl sm:text-6xl lg:text-7xl font-outfit font-black uppercase tracking-tighter text-white leading-[0.9] mt-2 md:mt-0 line-clamp-2 md:max-h-[2em] overflow-hidden drop-shadow-2xl">
+                          {getTeam(heroMatch.team2).name}
+                       </h2>
+                       
+                       <div className="md:hidden w-16 h-2 rounded-full mt-6 transition-transform duration-500 shadow-lg" style={{backgroundColor: getTeam(heroMatch.team2).color, boxShadow: `0 0 30px ${getTeam(heroMatch.team2).color}`}} />
                     </div>
                  </div>
               </div>
 
-              <div className="flex-1 p-8 md:p-14 flex flex-col justify-center relative z-20 md:diagonal-slash-reverse overflow-hidden bg-black/20">
-                 <div className="absolute inset-0 pointer-events-none transition-opacity duration-700 opacity-70 group-hover:opacity-100" style={{background: `radial-gradient(circle at 100% 50%, ${getTeam(heroMatch.team2).color}40 0%, transparent 70%)`}}></div>
-                 <div className="relative z-10 flex flex-col items-center md:items-end text-center md:text-right h-full justify-center w-full md:w-[90%] md:ml-auto">
-                    <div className="w-16 h-2 rounded-full mb-6 md:mb-8 transition-transform duration-500 group-hover:scale-110 group-hover:-translate-x-2 shadow-lg" style={{backgroundColor: getTeam(heroMatch.team2).color, boxShadow: `0 0 30px ${getTeam(heroMatch.team2).color}`}} />
-                    
-                    <h2 className="text-5xl sm:text-6xl lg:text-7xl font-outfit font-black uppercase tracking-tighter text-white leading-[0.9] mb-4 line-clamp-2 max-h-[2.2em] md:max-h-[2em] overflow-hidden drop-shadow-2xl">
-                       {getTeam(heroMatch.team2).name}
-                    </h2>
-                    
-                    {isLive && (
-                       <motion.div key={heroMatch.score2} initial={{scale:1.2, opacity:0, x:20}} animate={{scale:1, opacity:1, x:0}} className="text-8xl sm:text-9xl lg:text-[11rem] font-black font-outfit tabular-nums tracking-tighter mt-4 md:mt-auto leading-none drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]" style={{color: getTeam(heroMatch.team2).color}}>
-                          {heroMatch.score2}
-                       </motion.div>
-                    )}
+              {/* Central Timer Box - Safely centered between the padded team areas on mobile */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center">
+                 <div className="glass-panel p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden backdrop-blur-3xl border border-white/20 skew-x-[-10deg]">
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
+                    <div className="skew-x-[10deg] flex flex-col items-center">
+                       <div className={`px-4 md:px-5 py-1.5 md:py-2 rounded-full text-[9px] md:text-xs font-black uppercase tracking-[0.3em] mb-2 md:mb-3 relative z-10 ${isLive ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse shadow-[0_0_20px_rgba(244,63,94,0.4)]' : 'bg-white/10 text-zinc-300 border border-white/20'}`}>
+                          {isLive ? 'LIVE NOW' : 'NEXT MATCH'}
+                       </div>
+                       {isLive ? (
+                          <div className="text-3xl md:text-5xl font-outfit font-black text-white px-4 md:px-6 flex items-center justify-center relative z-10 whitespace-nowrap drop-shadow-md tracking-tighter">
+                             <LiveTimerDisplay timer={heroMatch.timer} match={heroMatch} />
+                             {heroMatch.timer.stoppage > 0 && <span className="text-rose-500 ml-2">+{heroMatch.timer.stoppage}</span>}
+                          </div>
+                       ) : (
+                          <div className="text-2xl md:text-4xl font-outfit font-black text-white px-4 md:px-6 flex items-center justify-center relative z-10 whitespace-nowrap drop-shadow-md tracking-tighter">
+                             {new Date(heroMatch.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                          </div>
+                       )}
+                       <div className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mt-2 md:mt-3 relative z-10 bg-black/60 px-3 md:px-4 py-1 md:py-1.5 rounded-md border border-white/5">{isLive ? heroMatch.timer.period : 'KICKOFF'}</div>
+                    </div>
                  </div>
               </div>
            </div>
         ) : null}
 
-        {}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 flex-1 relative z-10">
            <div className="xl:col-span-2 flex flex-col h-full">
               
@@ -1128,21 +1141,22 @@ export default function App() {
                                          )}
                                        </div>
 
-                                       <div className={`flex relative z-10 ${isMatchLive ? 'flex-row justify-around items-center' : 'flex-col space-y-5'}`}>
-                                         <div className="flex items-center justify-between gap-4">
-                                           <div className="flex items-center gap-4">
-                                             <div className="w-3 h-3 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.3)] border border-white/20" style={{backgroundColor: mt1.color, boxShadow: `0 0 15px ${mt1.color}`}} />
-                                             <span className={`font-outfit font-black uppercase tracking-tight line-clamp-1 ${isMatchLive ? 'text-3xl text-white' : 'text-xl text-zinc-200'}`}>{mt1.name}</span>
+                                       {/* FIX 2: Vertically stacked scoreboard layout for match list to prevent squishing */}
+                                       <div className="flex flex-col space-y-4 md:space-y-5 relative z-10 w-full">
+                                         <div className="flex items-center justify-between w-full gap-4">
+                                           <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
+                                             <div className="w-3 h-3 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.3)] border border-white/20" style={{backgroundColor: mt1.color, boxShadow: `0 0 15px ${mt1.color}`}} />
+                                             <span className={`font-outfit font-black uppercase tracking-tight truncate block ${isMatchLive ? 'text-3xl text-white' : 'text-xl text-zinc-200'}`}>{mt1.name}</span>
                                            </div>
-                                           <span className={`font-outfit font-black tabular-nums ${isMatchLive ? 'text-6xl text-white drop-shadow-md' : 'text-3xl text-zinc-500'}`}>{m.score1}</span>
+                                           <span className={`font-outfit font-black tabular-nums shrink-0 ${isMatchLive ? 'text-5xl md:text-6xl text-white drop-shadow-md' : 'text-3xl text-zinc-500'}`}>{m.score1}</span>
                                          </div>
-                                         {isMatchLive && <div className="text-zinc-600 font-black italic text-2xl skew-x-[-10deg]">VS</div>}
-                                         <div className="flex items-center justify-between gap-4">
-                                           <div className="flex items-center gap-4">
-                                             <div className="w-3 h-3 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.3)] border border-white/20" style={{backgroundColor: mt2.color, boxShadow: `0 0 15px ${mt2.color}`}} />
-                                             <span className={`font-outfit font-black uppercase tracking-tight line-clamp-1 ${isMatchLive ? 'text-3xl text-white' : 'text-xl text-zinc-200'}`}>{mt2.name}</span>
+                                         
+                                         <div className="flex items-center justify-between w-full gap-4">
+                                           <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
+                                             <div className="w-3 h-3 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.3)] border border-white/20" style={{backgroundColor: mt2.color, boxShadow: `0 0 15px ${mt2.color}`}} />
+                                             <span className={`font-outfit font-black uppercase tracking-tight truncate block ${isMatchLive ? 'text-3xl text-white' : 'text-xl text-zinc-200'}`}>{mt2.name}</span>
                                            </div>
-                                           <span className={`font-outfit font-black tabular-nums ${isMatchLive ? 'text-6xl text-white drop-shadow-md' : 'text-3xl text-zinc-500'}`}>{m.score2}</span>
+                                           <span className={`font-outfit font-black tabular-nums shrink-0 ${isMatchLive ? 'text-5xl md:text-6xl text-white drop-shadow-md' : 'text-3xl text-zinc-500'}`}>{m.score2}</span>
                                          </div>
                                        </div>
                                        
@@ -1167,7 +1181,6 @@ export default function App() {
                        </div>
                      )}
 
-                     {}
                      {activeTab === 'teams' && (
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                          {teams.map(team => (
@@ -1274,7 +1287,6 @@ export default function App() {
                        </div>
                      )}
 
-                     {}
                      {activeTab === 'stats' && (
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                          {[
@@ -1301,7 +1313,6 @@ export default function App() {
                                   const oppSot = isT1 ? m.stats.t2Sot : m.stats.t1Sot;
                                   
                                   const baseSaves = Math.max(0, oppSot - goalsConceded);
-                                  // FIX: Swapped match.events to m.events to prevent ReferenceError
                                   const explicitSaves = m.events.filter(e => e.player === p.id && e.type === 'save').length;
                                   const matchSaves = Math.max(baseSaves, explicitSaves);
                                   
