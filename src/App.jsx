@@ -73,7 +73,7 @@ const LiveTimerDisplay = ({ timer, match }) => {
       const s = (currentElapsed % 60).toString().padStart(2, '0');
       setDisplay(`${m}:${s}`);
 
-      // Clock should turn red if elapsed time exceeds the expected duration of the current half
+      // Clock turns red if elapsed time exceeds expected duration of the current half
       let overtime = false;
       if (timer.period === '1st Half' && currentElapsed >= targetSeconds) overtime = true;
       else if (timer.period === '2nd Half' && currentElapsed >= targetSeconds * 2) overtime = true;
@@ -93,7 +93,6 @@ const LiveTimerDisplay = ({ timer, match }) => {
 
 const StandingsWidget = ({ standings }) => (
   <div className="bg-zinc-950/80 backdrop-blur-2xl rounded-3xl border border-white/10 overflow-hidden flex flex-col h-full shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative">
-    {/* Premium Top Glow Overlay */}
     <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none" />
     
     <div className="p-6 border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent flex items-center gap-4 relative z-10">
@@ -125,7 +124,6 @@ const StandingsWidget = ({ standings }) => (
         <tbody className="divide-y divide-white/5">
           {standings.map((t, idx) => (
             <tr key={t.id} className={`hover:bg-white/[0.06] transition-all duration-300 group relative ${idx < 2 ? 'bg-emerald-500/[0.03]' : ''}`}>
-              {/* Highlight Qualification Zone (Top 2) */}
               {idx < 2 && <td className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)]" />}
               
               <td className="p-4 font-outfit font-black text-zinc-500 text-lg w-12 text-center pl-6">{idx + 1}</td>
@@ -241,7 +239,6 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
     else if (match.status === 'live' && match.timer.period === 'HT') {
       updateLiveMatch(m => {
         m.timer.period = '2nd Half'; m.timer.isRunning = true; m.timer.lastStartTime = Date.now(); m.timer.stoppage = 0;
-        // Strictly set clock to start at half duration
         m.timer.baseElapsed = (m.halfDuration || 15) * 60; 
         return m;
       });
@@ -312,7 +309,7 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
                     <>
                        <AlertCircle size={40} className="text-rose-500 mb-4" />
                        <h3 className="text-white font-bold text-lg mb-2">Reset Entire Match?</h3>
-                       <p className="text-zinc-400 text-sm mb-6">This will clear all scores, stats, and events, reverting the match to upcoming. Ideal for clearing trial runs.</p>
+                       <p className="text-zinc-400 text-sm mb-6">This will clear all scores, stats, and events, reverting the match to upcoming.</p>
                        <div className="flex gap-3 w-full">
                           <button onClick={() => setDialogState(null)} className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest transition-colors">Cancel</button>
                           <button onClick={() => {
@@ -433,7 +430,6 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
           </div>
 
           <div className="p-4 sm:p-6 md:p-10 flex-1 overflow-y-auto relative bg-zinc-950">
-            {/* Dynamic Background Pattern inside Modal */}
             <div className="absolute inset-0 opacity-10 pointer-events-none mix-blend-overlay" style={{background: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)'}} />
 
             <div className="flex flex-row items-center justify-center gap-2 sm:gap-8 md:gap-16 mb-8 md:mb-12 relative z-10">
@@ -488,28 +484,33 @@ const MatchDashboard = ({ matchId, onClose, matches, teams, players, isAdmin, sy
 
             <div className="relative z-10">
                {!isAdmin ? (
-                  // VIEWER VIEW: Show Match Timeline / Important Moments
+                  // VIEWER VIEW: Show Match Timeline / Important Moments with Glowing Snake
                   <div>
                     <h4 className="text-center text-xs font-black text-zinc-500 uppercase tracking-[0.2em] mb-6 sm:mb-8">Match Timeline</h4>
-                    <div className="bg-white/[0.02] backdrop-blur-md rounded-3xl border border-white/5 p-4 sm:p-8">
+                    <div className="bg-white/[0.02] backdrop-blur-md rounded-3xl border border-white/5 p-4 sm:p-8 relative">
                        {match.events.filter(e => e.type !== 'save').length === 0 ? (
                          <p className="text-zinc-600 text-center text-xs font-bold uppercase tracking-widest py-8">No significant events yet.</p>
                        ) : (
-                         <div className="flex flex-col gap-2 relative before:absolute before:inset-y-0 before:w-px before:bg-white/10 before:left-1/2 before:-translate-x-1/2">
+                         <div className="flex flex-col gap-2 relative before:absolute before:inset-y-0 before:w-1 before:bg-white/5 before:left-1/2 before:-translate-x-1/2 before:rounded-full py-4">
+                           {/* Glowing Snake Line */}
+                           <div className="absolute top-0 w-1 bg-gradient-to-b from-emerald-400 to-emerald-600 left-1/2 -translate-x-1/2 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.8)] transition-all duration-1000 ease-in-out z-0" style={{height: `${Math.min((getCurrentMatchMinute() / ((match.halfDuration || 15) * 2)) * 100, 100)}%`}}>
+                              {match.status === 'live' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_20px_rgba(16,185,129,1)] animate-pulse" />}
+                           </div>
+
                            {[...match.events].filter(e => e.type !== 'save').sort((a,b) => a.minute - b.minute).map(e => {
                               const p = players.find(x => x.id === e.player);
                               const t = getTeam(e.team);
                               const isT1 = e.team === match.team1;
                               return (
-                                <div key={e.id} className={`flex items-center gap-4 py-3 w-1/2 relative ${isT1 ? 'flex-row self-start pr-6 sm:pr-10 justify-end' : 'flex-row-reverse self-end pl-6 sm:pl-10 justify-end'}`}>
+                                <div key={e.id} className={`flex items-center gap-4 py-3 w-1/2 relative z-10 ${isT1 ? 'flex-row self-start pr-6 sm:pr-10 justify-end' : 'flex-row-reverse self-end pl-6 sm:pl-10 justify-end'}`}>
                                    <div className={`flex flex-col ${isT1 ? 'text-right' : 'text-left'}`}>
-                                      <span className="font-bold text-white text-xs sm:text-sm uppercase tracking-wide">{p?.name || 'Unknown Player'}</span>
-                                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest" style={{color: t.color}}>{t.name}</span>
+                                      <span className="font-bold text-white text-xs sm:text-sm uppercase tracking-wide drop-shadow-md">{p?.name || 'Unknown Player'}</span>
+                                      <span className="text-[9px] font-bold uppercase tracking-widest drop-shadow-sm" style={{color: t.color}}>{t.name}</span>
                                    </div>
-                                   <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 border border-white/20 bg-zinc-900 shadow-xl z-10 absolute top-1/2 -translate-y-1/2 ${isT1 ? '-right-4 sm:-right-5' : '-left-4 sm:-left-5'}`}>
-                                      {e.type === 'goal' ? '⚽' : e.type === 'assist' ? '👟' : e.type === 'yellow' ? <div className="w-2.5 h-3.5 bg-yellow-400 rounded-sm shadow-sm" /> : e.type === 'red' ? <div className="w-2.5 h-3.5 bg-rose-500 rounded-sm shadow-sm" /> : ''}
+                                   <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 border-[2px] border-zinc-950 bg-zinc-900 shadow-[0_0_15px_rgba(0,0,0,0.8)] z-10 absolute top-1/2 -translate-y-1/2 ${isT1 ? '-right-4 sm:-right-5' : '-left-4 sm:-left-5'}`}>
+                                      {e.type === 'goal' ? <span className="drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]">⚽</span> : e.type === 'assist' ? '👟' : e.type === 'yellow' ? <div className="w-2.5 h-3.5 bg-yellow-400 rounded-sm shadow-[0_0_8px_rgba(250,204,21,0.8)]" /> : e.type === 'red' ? <div className="w-2.5 h-3.5 bg-rose-500 rounded-sm shadow-[0_0_8px_rgba(244,63,94,0.8)]" /> : ''}
                                    </div>
-                                   <span className={`text-[10px] font-black text-zinc-400 bg-white/5 px-2 py-1 rounded absolute top-1/2 -translate-y-1/2 ${isT1 ? '-right-[3.5rem] sm:-right-[4.5rem] text-left' : '-left-[3.5rem] sm:-left-[4.5rem] text-right'}`}>{e.minute}'</span>
+                                   <span className={`text-[10px] font-black text-white bg-black/80 px-2.5 py-1 rounded-md border border-white/10 shadow-lg absolute top-1/2 -translate-y-1/2 ${isT1 ? '-right-[4rem] sm:-right-[5rem] text-left' : '-left-[4rem] sm:-left-[5rem] text-right'}`}>{e.minute}'</span>
                                 </div>
                               )
                            })}
@@ -927,6 +928,7 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1 flex flex-col relative z-10">
         
+        {}
         {isTournamentOver ? (
            <div className="w-full relative glass-panel rounded-[3rem] p-12 md:p-24 mb-12 flex flex-col items-center justify-center text-center overflow-hidden shadow-2xl group">
               <div 
@@ -951,7 +953,6 @@ export default function App() {
            </div>
         ) : heroMatch ? (
            <div className="w-full relative rounded-[2.5rem] md:rounded-[3rem] overflow-hidden bg-zinc-950 border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] mb-12 flex flex-col md:flex-row min-h-[350px] md:min-h-[450px] group">
-              {/* Dynamic Overlay & Cinematic Texture */}
               <div 
                 className="absolute inset-0 bg-cover bg-center opacity-50 transition-transform duration-1000 group-hover:scale-105 z-0" 
                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=2000&q=80')" }}
@@ -962,16 +963,13 @@ export default function App() {
               <div className="absolute inset-0 bg-grid opacity-30 z-0 mix-blend-overlay"></div>
               <div className="absolute inset-0 opacity-50 z-0" style={{background: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 20px)'}}></div>
 
-              {/* Decorative Diagonal Slice in Center */}
               <div className="hidden md:block absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[200px] bg-black/70 backdrop-blur-xl border-l border-r border-white/10 skew-x-[-20deg] z-10 shadow-2xl"></div>
 
-              {/* Team 1 Section */}
               <div className="flex-1 p-8 md:p-14 flex flex-col justify-center relative z-20 md:diagonal-slash overflow-hidden">
                  <div className="absolute inset-0 pointer-events-none transition-opacity duration-700 opacity-70 group-hover:opacity-100" style={{background: `radial-gradient(circle at 0% 50%, ${getTeam(heroMatch.team1).color}40 0%, transparent 70%)`}}></div>
                  <div className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left h-full justify-center w-full md:w-[90%]">
                     <div className="w-16 h-2 rounded-full mb-6 md:mb-8 transition-transform duration-500 group-hover:scale-110 group-hover:translate-x-2 shadow-lg" style={{backgroundColor: getTeam(heroMatch.team1).color, boxShadow: `0 0 30px ${getTeam(heroMatch.team1).color}`}} />
                     
-                    {/* ENFORCING LINE CLAMP 2 WITH RESPONSIVE SIZES */}
                     <h2 className="text-5xl sm:text-6xl lg:text-7xl font-outfit font-black uppercase tracking-tighter text-white leading-[0.9] mb-4 line-clamp-2 max-h-[2.2em] md:max-h-[2em] overflow-hidden drop-shadow-2xl">
                        {getTeam(heroMatch.team1).name}
                     </h2>
@@ -984,7 +982,6 @@ export default function App() {
                  </div>
               </div>
 
-              {/* Central VS / Status Badge */}
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center">
                  <div className="glass-panel p-4 md:p-5 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden backdrop-blur-3xl border border-white/20 skew-x-[-10deg]">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
@@ -1007,13 +1004,11 @@ export default function App() {
                  </div>
               </div>
 
-              {/* Team 2 Section */}
               <div className="flex-1 p-8 md:p-14 flex flex-col justify-center relative z-20 md:diagonal-slash-reverse overflow-hidden bg-black/20">
                  <div className="absolute inset-0 pointer-events-none transition-opacity duration-700 opacity-70 group-hover:opacity-100" style={{background: `radial-gradient(circle at 100% 50%, ${getTeam(heroMatch.team2).color}40 0%, transparent 70%)`}}></div>
                  <div className="relative z-10 flex flex-col items-center md:items-end text-center md:text-right h-full justify-center w-full md:w-[90%] md:ml-auto">
                     <div className="w-16 h-2 rounded-full mb-6 md:mb-8 transition-transform duration-500 group-hover:scale-110 group-hover:-translate-x-2 shadow-lg" style={{backgroundColor: getTeam(heroMatch.team2).color, boxShadow: `0 0 30px ${getTeam(heroMatch.team2).color}`}} />
                     
-                    {/* ENFORCING LINE CLAMP 2 WITH RESPONSIVE SIZES */}
                     <h2 className="text-5xl sm:text-6xl lg:text-7xl font-outfit font-black uppercase tracking-tighter text-white leading-[0.9] mb-4 line-clamp-2 max-h-[2.2em] md:max-h-[2em] overflow-hidden drop-shadow-2xl">
                        {getTeam(heroMatch.team2).name}
                     </h2>
@@ -1028,19 +1023,19 @@ export default function App() {
            </div>
         ) : null}
 
+        {}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 flex-1 relative z-10">
            <div className="xl:col-span-2 flex flex-col h-full">
               
-              {/* Complex Navigation Tabs */}
               <div className="flex overflow-x-auto gap-2 md:gap-4 mb-8 bg-zinc-950/80 p-2 sm:p-3 md:p-4 rounded-3xl md:rounded-[2rem] border border-white/10 backdrop-blur-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5)] w-full max-w-full xl:max-w-fit mx-auto xl:mx-0 relative z-20 snap-x">
                 {[
                   { id: 'fixtures', label: 'Matches', icon: Calendar },
                   { id: 'teams', label: 'Squads', icon: Users },
                   { id: 'stats', label: 'Stats', icon: Activity },
-                  { id: 'standings', label: 'Table', icon: Trophy, hiddenDesktop: true }
+                  { id: 'standings_mobile', label: 'Table', icon: Trophy, hiddenDesktop: true }
                 ].map(tab => {
                   const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
+                  const isActive = activeTab === tab.id.replace('_mobile', '');
                   
                   if (tab.hiddenDesktop) {
                      return (
@@ -1057,7 +1052,7 @@ export default function App() {
                   }
 
                   return (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative flex items-center gap-1.5 sm:gap-2 md:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap group skew-x-[-10deg] shrink-0 snap-center ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}>
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id.replace('_mobile',''))} className={`relative flex items-center gap-1.5 sm:gap-2 md:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap group skew-x-[-10deg] shrink-0 snap-center ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}>
                       {isActive && (
                          <motion.div layoutId="activeTab" className="absolute inset-0 bg-white/10 border border-white/20 rounded-xl sm:rounded-2xl md:rounded-[1.5rem] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
                       )}
@@ -1172,11 +1167,11 @@ export default function App() {
                        </div>
                      )}
 
+                     {}
                      {activeTab === 'teams' && (
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                          {teams.map(team => (
                            <div key={team.id} className="bg-zinc-950/80 backdrop-blur-2xl rounded-3xl border border-white/10 overflow-hidden flex flex-col shadow-[0_15px_40px_rgba(0,0,0,0.5)] group relative">
-                             {/* Team Banner / Header */}
                              <div className="p-8 border-b border-white/10 flex items-center justify-between relative overflow-hidden bg-black/40">
                                <div className="absolute inset-0 opacity-40 pointer-events-none transition-transform duration-700 group-hover:scale-110" style={{background: `radial-gradient(circle at top right, ${team.color}, transparent)`}}/>
                                <div className="absolute top-0 bottom-0 right-10 w-px bg-white/10 skew-x-[-20deg]" />
@@ -1230,23 +1225,21 @@ export default function App() {
                                   </div>
                                )}
 
-                               {/* Pitch Visualization */}
-                               <div className="relative w-full aspect-[4/5] md:aspect-[3/4] bg-zinc-950 border border-white/20 rounded-2xl mb-2 overflow-hidden flex flex-col justify-evenly py-6 shadow-[inset_0_0_50px_rgba(0,0,0,0.8)]">
-                                  {/* Pitch markings */}
-                                  <div className="absolute inset-0 opacity-[0.15] pointer-events-none flex flex-col justify-between items-center py-6">
-                                     <div className="absolute top-1/2 left-0 w-full h-0.5 bg-white"></div>
-                                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-2 border-white rounded-full"></div>
-                                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full"></div>
-                                     <div className="w-1/2 h-20 border-b-2 border-l-2 border-r-2 border-white"></div>
-                                     <div className="w-1/2 h-20 border-t-2 border-l-2 border-r-2 border-white"></div>
+                               {/* Clean 2D Pitch Visualization */}
+                               <div className="relative w-full aspect-[4/5] md:aspect-[3/4] bg-zinc-950 border-2 border-white/10 rounded-2xl mb-6 overflow-hidden flex flex-col justify-evenly py-4">
+                                  <div className="absolute inset-0 opacity-10 pointer-events-none flex flex-col justify-between items-center py-4">
+                                     <div className="absolute top-1/2 left-0 w-full h-px bg-white"></div>
+                                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border border-white rounded-full"></div>
+                                     <div className="w-1/2 h-16 border-b border-l border-r border-white"></div>
+                                     <div className="w-1/2 h-16 border-t border-l border-r border-white"></div>
                                   </div>
                                   
                                   {players.filter(p => p.teamId === team.id).length === 0 ? (
-                                     <div className="absolute inset-0 flex items-center justify-center"><p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600 bg-black/50 px-4 py-2 rounded-lg backdrop-blur-sm">Squad Empty</p></div>
+                                     <div className="absolute inset-0 flex items-center justify-center"><p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">Squad Empty</p></div>
                                   ) : (
                                      ['FWD', 'MID', 'DEF', 'GK'].map(pos => {
                                         const posPlayers = players.filter(p => p.teamId === team.id && p.position === pos);
-                                        if (posPlayers.length === 0) return <div key={pos} className="h-12"></div>;
+                                        if (posPlayers.length === 0) return <div key={pos} className="h-10"></div>;
                                         return (
                                            <div key={pos} className="flex justify-center gap-4 md:gap-8 w-full z-10 px-4">
                                               {posPlayers.map(p => {
@@ -1255,15 +1248,15 @@ export default function App() {
                                                  const isIcon = pIdx === 1;
                                                  return (
                                                     <div key={p.id} className="flex flex-col items-center group relative cursor-default transition-transform hover:scale-110">
-                                                       <div className="w-10 h-10 md:w-12 md:h-12 rounded-full border-[3px] border-zinc-950 shadow-[0_10px_20px_rgba(0,0,0,0.8)] flex items-center justify-center text-white font-black text-sm relative" style={{backgroundColor: team.color}}>
+                                                       <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-zinc-950 shadow-[0_4px_10px_rgba(0,0,0,0.5)] flex items-center justify-center text-white font-bold text-xs relative" style={{backgroundColor: team.color}}>
                                                           {p.name.substring(0,2).toUpperCase()}
-                                                          {isCaptain && <span className="absolute -top-2 -right-2 w-5 h-5 bg-amber-500 text-black text-[9px] font-black rounded-full flex items-center justify-center border-2 border-black z-20 shadow-lg">C</span>}
-                                                          {isIcon && !isCaptain && <span className="absolute -top-2 -right-2 w-5 h-5 bg-purple-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-black z-20 shadow-lg">★</span>}
+                                                          {isCaptain && <span className="absolute -top-2 -right-2 w-4 h-4 bg-amber-500 text-black text-[8px] font-black rounded-full flex items-center justify-center border border-black z-20">C</span>}
+                                                          {isIcon && !isCaptain && <span className="absolute -top-2 -right-2 w-4 h-4 bg-purple-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border border-black z-20">★</span>}
                                                        </div>
-                                                       <span className="mt-2 text-[9px] md:text-[10px] font-bold text-zinc-200 bg-black/80 px-2.5 py-1 rounded-md backdrop-blur-md whitespace-nowrap overflow-hidden text-ellipsis max-w-[70px] md:max-w-[90px] text-center border border-white/10">{p.name}</span>
+                                                       <span className="mt-2 text-[9px] md:text-[10px] font-bold text-zinc-300 bg-black/60 px-2 py-0.5 rounded backdrop-blur-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[60px] md:max-w-[80px] text-center">{p.name}</span>
                                                        
                                                        {isAdmin && (
-                                                          <button onClick={() => syncToDB(null, null, players.filter(x => x.id !== p.id))} className="absolute -top-2 -left-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-30 border-2 border-black">
+                                                          <button onClick={() => syncToDB(null, null, players.filter(x => x.id !== p.id))} className="absolute -top-2 -left-2 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-30">
                                                              <X size={12}/>
                                                           </button>
                                                        )}
@@ -1281,6 +1274,7 @@ export default function App() {
                        </div>
                      )}
 
+                     {}
                      {activeTab === 'stats' && (
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                          {[
@@ -1307,6 +1301,7 @@ export default function App() {
                                   const oppSot = isT1 ? m.stats.t2Sot : m.stats.t1Sot;
                                   
                                   const baseSaves = Math.max(0, oppSot - goalsConceded);
+                                  // FIX: Swapped match.events to m.events to prevent ReferenceError
                                   const explicitSaves = m.events.filter(e => e.player === p.id && e.type === 'save').length;
                                   const matchSaves = Math.max(baseSaves, explicitSaves);
                                   
@@ -1366,24 +1361,34 @@ export default function App() {
                                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">No records yet</p>
                                  </div>
                                ) : (
-                                 board.data.slice(0, 5).map((p, idx) => (
-                                   <div key={p.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors shadow-sm">
-                                     <div className="flex items-center gap-4">
-                                       <span className="font-outfit font-black text-zinc-600 w-4 text-center text-lg">{idx + 1}</span>
-                                       <div className="w-3 h-3 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]" style={{backgroundColor: getTeam(p.teamId).color}} />
-                                       <div>
-                                          <span className="font-black text-white text-sm block uppercase tracking-wide">{p.name}</span>
-                                          <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">{getTeam(p.teamId).name} • {p.position}</span>
+                                 board.data.slice(0, 5).map((p, idx) => {
+                                   const pTeam = getTeam(p.teamId);
+                                   const isTop = idx === 0;
+                                   return (
+                                     <motion.div 
+                                       key={p.id} 
+                                       animate={isTop ? { boxShadow: [`0 0 0px ${pTeam.color}00`, `0 0 25px ${pTeam.color}60`, `0 0 0px ${pTeam.color}00`] } : {}}
+                                       transition={isTop ? { repeat: Infinity, duration: 2.5, ease: "easeInOut" } : {}}
+                                       className={`flex items-center justify-between p-4 rounded-xl transition-colors shadow-sm ${isTop ? 'bg-gradient-to-r from-white/10 to-white/5 border' : 'bg-white/5 border border-white/5 hover:bg-white/10'}`}
+                                       style={isTop ? { borderColor: `${pTeam.color}80` } : {}}
+                                     >
+                                       <div className="flex items-center gap-4">
+                                         <span className={`font-outfit font-black w-4 text-center text-lg ${isTop ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'text-zinc-600'}`}>{idx + 1}</span>
+                                         <div className="w-3 h-3 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]" style={{backgroundColor: pTeam.color, boxShadow: isTop ? `0 0 15px ${pTeam.color}` : undefined}} />
+                                         <div>
+                                            <span className={`font-black text-sm block uppercase tracking-wide ${isTop ? 'text-white' : 'text-zinc-200'}`}>{p.name}</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: isTop ? pTeam.color : '#71717a' }}>{pTeam.name} • {p.position}</span>
+                                         </div>
                                        </div>
-                                     </div>
-                                     <div className="flex flex-col items-end">
-                                        <span className="font-outfit font-black text-3xl text-white drop-shadow-md">{p.stat}</span>
-                                        {board.title === 'Golden Glove' && (
-                                           <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest bg-black/50 px-2 py-0.5 rounded">{p.totalSaves} SV • {p.cleanSheets} CS</span>
-                                        )}
-                                     </div>
-                                   </div>
-                                 ))
+                                       <div className="flex flex-col items-end">
+                                          <span className={`font-outfit font-black text-3xl drop-shadow-md ${isTop ? 'text-white' : 'text-zinc-300'}`}>{p.stat}</span>
+                                          {board.title === 'Golden Glove' && (
+                                             <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest bg-black/50 px-2 py-0.5 rounded">{p.totalSaves} SV • {p.cleanSheets} CS</span>
+                                          )}
+                                       </div>
+                                     </motion.div>
+                                   )
+                                 })
                                )}
                              </div>
                            </div>
@@ -1391,7 +1396,7 @@ export default function App() {
                        </div>
                      )}
                      
-                     {activeTab === 'standings' && (
+                     {activeTab === 'standings_mobile' && (
                         <div className="xl:hidden pb-10">
                            <StandingsWidget standings={standings} />
                         </div>
